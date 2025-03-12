@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$id": "https://raw.githubusercontent.com/graeter-group/kimmdy-hydrolysis/main/src/kimmdy_hydrolysis/kimmdy-yaml-schema.json",
+  "description": "Settings for peptide bond hydrolysis reaction",
+  "additionalProperties": false,
+  "properties": {
+    "cutoff": {
+      "type": "number",
+      "description": "Cutoff distance [A] for the reaction. Water within this distance from the peptide bond will be considered for hydrolysis.",
+      "pytype": "float",
+      "default": 6,
+      "minimum": 0.0
+    },
+    "step": {
+      "type": "integer",
+      "description": "Stepsize in frames for calculating the SASA (solvent accessible surface area) of each peptide bond and thus the reaction rate.",
+      "pytype": "int",
+      "default": 1,
+      "minimum": 1
+    },
+    "kmc": {
+      "description": "KMC algorithm for this reaction.",
+      "type": "string",
+      "pytype": "str",
+      "enum": [
+        "rfkmc",
+        "frm",
+        "extrande",
+        "extrande_mod"
+      ],
+      "default": "rfkmc"
+    },
+    "ph_value": {
+      "type": "float",
+      "description": "pH value of the system. The default value is 7.4. The rate of the reaction is scaled by the pH value. More basic conditions will increase the rate of the reaction.",
+      "pytype": "float",
+      "minimum": 1.0,
+      "maximum": 14.0,
+      "default": 7.4
+    },
+    "max_sasa": {
+      "type": "float",
+      "description": "Maximum expeted solvent accessiblity of a C in a peptide bond. The reaction rate will be scaled based on the percent decrease of the SASA from this value. The default value is 3.97 A^2, which is the SASA of the C of the peptide bond in a simple glycine-glycine peptide.",
+      "pytype": "float",
+      "minimum": 1,
+      "default": 3.97
+    },
+    "external_force": {
+      "type": "float",
+      "description": "External force applied in nN. Note: 603 gromacs (kJ/mol/nm^2) units per strand are 1nN. The default (-1) means to calculate a force per bond based on bond extension using a morse potential. This needs PLUMED",
+      "pytype": "float",
+      "default": -1
+    },
+    "eq_bond_lengths": {
+      "type": "string",
+      "description": "CSV file of equilibirum bond lengths for each peptide bond in the system. Colums: i,j,bond_length. The default is the empty string, in which case no equilibirum length correction is applied.",
+      "pytype": "str",
+      "default": ""
+    },
+    "temperature": {
+      "type": "float",
+      "description": "Temperature",
+      "pytype": "float",
+      "minimum": 0,
+      "default": 310
+    },
+    "theoretical_rates": {
+      "title": "Theoretical rates",
+      "type": "object",
+      "description": "For setting values in the arrhenius equation with rates based on theoretical energy calculations by Pill et al.",
+      "properties": {
+        "use": {
+          "title": "use",
+          "description": "Use theoretical rates instead of empirical rates. The default is false.",
+          "type": "boolean",
+          "pytype": "bool",
+          "default": false
+        },
+        "empirical_attempt_frequency": {
+          "type": "float",
+          "description": "The attempt frequency in 1/ps with the default based on experiments by Pill et al.",
+          "pytype": "float",
+          "minimum": 0,
+          "default": 0.1
+        },
+        "ts1": {
+          "type": "float",
+          "description": "Energy barrier at 0 external force for TS1 of the hydrolysis reaction. [kJ/mol]",
+          "pytype": "float",
+          "minimum": 1,
+          "default": 80
+        },
+        "ts2": {
+          "type": "float",
+          "description": "Energy barrier at 0 external force for TS2 of the hydrolysis reaction.",
+          "pytype": "float",
+          "minimum": 1,
+          "default": 92
+        },
+        "ts1_force_scaling": {
+          "type": "float",
+          "description": "Force scaling factor for TS1 in kJ/mol/nN",
+          "pytype": "float",
+          "minimum": 1,
+          "default": 1.67
+        },
+        "ts2_force_scaling": {
+          "type": "float",
+          "description": "Force scaling factor for TS2 in kJ/mol/nN",
+          "pytype": "float",
+          "minimum": 1,
+          "default": 25.83
+        },
+        "critical_force": {
+          "type": "float",
+          "description": "Force in nN at which (the activation energy of) TS2 becomes lower than TS1 and this TS1 becomes the rate limiting step.",
+          "pytype": "float",
+          "minimum": 1,
+          "default": 0.7
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,56 @@
+# kimmdy_hydrolysis.reaction { #kimmdy_hydrolysis.reaction }
+
+`reaction`
+
+
+
+## Classes
+
+| Name | Description |
+| --- | --- |
+| [HydrolysisReaction](#kimmdy_hydrolysis.reaction.HydrolysisReaction) | A custom reaction plugin. |
+
+### HydrolysisReaction { #kimmdy_hydrolysis.reaction.HydrolysisReaction }
+
+`reaction.HydrolysisReaction()`
+
+A custom reaction plugin.
+
+#### Methods
+
+| Name | Description |
+| --- | --- |
+| [times_to_timespans](#kimmdy_hydrolysis.reaction.HydrolysisReaction.times_to_timespans) | Transforms an array of times into a list of time intervals |
+
+##### times_to_timespans { #kimmdy_hydrolysis.reaction.HydrolysisReaction.times_to_timespans }
+
+`reaction.HydrolysisReaction.times_to_timespans(times)`
+
+Transforms an array of times into a list of time intervals
+times are an array of times at which the SASA was calculated
+timespans are the time intervals between those times
+as tuples of (start, end)
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| [high_force_log_rate](#kimmdy_hydrolysis.reaction.high_force_log_rate) | (Intercept) -20.342988   1.946146  -10.45 5.36e-10 *** |
+| [theoretical_reaction_rate_per_s](#kimmdy_hydrolysis.reaction.theoretical_reaction_rate_per_s) | Calculate reaction rate in 1/s |
+
+### high_force_log_rate { #kimmdy_hydrolysis.reaction.high_force_log_rate }
+
+`reaction.high_force_log_rate(force, temperature=T_EXPERIMENT)`
+
+(Intercept) -20.342988   1.946146  -10.45 5.36e-10 ***
+t             0.070648   0.006458   10.94 2.30e-10 ***
+f             1.605233   0.100667   15.95 1.43e-13 ***
+
+### theoretical_reaction_rate_per_s { #kimmdy_hydrolysis.reaction.theoretical_reaction_rate_per_s }
+
+`reaction.theoretical_reaction_rate_per_s(force=0, ts1=80, ts2=92, ts1_force_scaling=1.67, ts2_force_scaling=25.83, A=100000000000.0, temperature=300, ph_value=7.4)`
+
+Calculate reaction rate in 1/s
+
+see SI of pill et al. 2019
+<http://dx.doi.org/10.1002/anie.201902752>

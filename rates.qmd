@@ -1,0 +1,135 @@
+# Theoretical Rates
+
+KIMMDY can be used to sample competing reactions as long as proxies for comparable reaction rates are known.
+Let us consider the following two reactions that can occur in the backbone of a protein:
+
+1. Homolysis of a bond
+2. Hydrolysis of a bond
+
+The KIMMDY-plugin version of earlier work on collagen bond rupture by @rennekampHybridKineticMonte2020 shipped with KIMMDY in the optional [kimmdy-reactons](https://graeter-group.github.io/kimmdy-reactions/) package can be used to simulate force-dependent bond rupture reactions.
+
+$$
+k=A e^{-\Delta E / k_B T}
+$${#eq-rate}
+
+@rennekampHybridKineticMonte2020 ultimately used an empirical attempt frequency of $A=0.23 ps^{-1}$ (after starting with the theoretical maximal attempt frequency of $A=6.25 ps^{-1}$).
+
+For hydrolysis, we take a a baseline energy barrier scaled by the force-dependence of the reaction unveiled by @pillMechanicalActivationDrastically2019.
+The observed attempt frequency of the hydrolysis reaction is further scaled by the solvent accessible surface area (SASA) of the peptide bond, normalized
+to the maximum SASA of a peptide bond in a lonely glycine-glycine dipeptide ($=140 A^2$).
+
+@pillMechanicalActivationDrastically2019 suggest that the rate of the hydrolysis reaction is govered by two enegy barriers, where T1 is
+almost insensitive to mechanical activation, but only becomes rate-determining after the mechanically sensitive T2 is lowered by force.
+
+TS1:
+
+- 80 kJ/mol at 0nN
+- 77 kJ/mol at 1.8nN
+- E = 80 - 1.67 * F
+
+TS2:
+
+- 92.5 kJ/mol at 0nN
+- 46 kJ/mol at 1.8 nN
+- E = 92.5 - 25.83 * F
+
+This translates to:
+
+```python
+critical_force = 0.7 # nN
+if force < critical_force
+  # low force regime, TS2 is rate-determining
+  E_barrier = 92.5 - 25.83 * force
+else:
+  # high force regime, TS1 is rate-determining
+  E_barrier = 80 - 1.67 * force
+```
+
+But the theortical rates don't quite match the experimental rates.
+
+# Solution
+
+```{python}
+from plotnine import * # pyright: ignore
+import pandas as pd
+import numpy as np
+from kimmdy_hydrolysis.reaction import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate
+import pandas as pd
+import os
+
+root = os.getcwd()
+
+theme_set(theme_minimal())
+```
+
+Instead of calculating rates from the theoretical energies we can fit the rates to the experimental data directly.
+
+Get the data from the SI and add predicted rates from hydrolysis plugin function:
+
+```{python}
+df = pd.read_csv("./assets/afm-rates.csv")
+df = df.melt(id_vars=["f"], var_name="t", value_name="rate")
+df["t"] = pd.to_numeric(df["t"], errors="coerce")
+df = df.dropna(subset=["rate"])
+df["log_k"] = np.log(df["rate"])
+df["is_low_f"] = df["f"] <= 0.7
+df['plugin_k'] = [experimental_reaction_rate_per_s(force=f, temperature=t) for f, t in zip(df["f"], df["t"])]
+df['plugin_theo_k'] = [theoretical_reaction_rate_per_s(force=f, temperature=t) for f, t in zip(df["f"], df["t"])]
+df['plugin_high_log_k'] = [high_force_log_rate(force=f, temperature=t) for f, t in zip(df["f"], df["t"])]
+df['plugin_low_log_k'] = [low_force_log_rate(force=f) for f, t in zip(df["f"], df["t"])]
+df['plugin_log_k'] = np.log(df['plugin_k'])
+df.head()
+```
+
+Fit model log(k) ~ t + f:
+
+```{python}
+import statsmodels.api as sm
+
+model = sm.OLS.from_formula("log_k ~ t + f", data=df.query("not is_low_f"))
+model.fit().summary()
+```
+
+add model predictions:
+
+```{python}
+df['model_high_log_k'] = model.fit().predict(df.query("not is_low_f"))
+```
+
+Arrhenius plot:
+
+```{python}
+p = (
+  ggplot(df.query('not is_low_f'), aes(x='t', y='log_k', color='factor(f)')) +
+  geom_smooth(method='lm', se=False) +
+  geom_point(size=5) +
+  geom_point(aes(y='plugin_high_log_k'), size=5, shape='x') +
+  geom_point(aes(y='model_high_log_k'), size=5, shape='.') +
+  scale_x_reverse() +
+  guides(color=guide_legend(reverse=True)) +
+  labs(
+    y='log(k) [1/s]',
+    x='Temperature [K]',
+    color='Force [nN]'
+  )
+)
+p.show()
+```
+
+
+```{python}
+p = (
+  ggplot(df, aes(x='t', y='log_k', color='factor(f)')) +
+  # geom_smooth(method='lm', se=False) +
+  geom_point(size=5) +
+  geom_point(aes(y='plugin_log_k'), size=5, shape='x') +
+  scale_x_reverse() +
+  guides(color=guide_legend(reverse=True)) +
+  labs(
+    y='log(k) [1/s]',
+    x='Temperature [K]',
+    color='Force [nN]'
+  )
+)
+p.show()
+```

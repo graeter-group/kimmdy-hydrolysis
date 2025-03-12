@@ -1,0 +1,29 @@
+## KIMMDY Hydrolysis Options
+
+For all KIMMDY options see [here](https://graeter-group.github.io/kimmdy/guide/references/input.html#all-options).
+
+```{python}
+#| output: asis
+#| echo: false
+from kimmdy.schema import flatten_scheme, convert_schema_to_dict
+from pathlib import Path
+import json
+
+path = Path(f"./src/kimmdy_hydrolysis/kimmdy-yaml-schema.json")
+with path.open("r") as f:
+    schema = json.load(f)
+
+scheme = convert_schema_to_dict(schema)
+flat_scheme = flatten_scheme(scheme)
+
+for item in flat_scheme:
+  print(f"### {item['key']}\n")
+  print(f"{item['desc']}\n\n")
+  if item['type'] != "":
+    print(f"**Type**: {item['type']}\n\n")
+  if item['enum'] != "":
+    print(f"**Options**: {item['enum']}\n\n")
+  if item['default'] != "":
+    print(f"**Default**: {item['default']}\n\n")
+```
+

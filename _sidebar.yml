@@ -1,0 +1,9 @@
+website:
+  sidebar:
+  - contents:
+    - _reference/index.qmd
+    - contents:
+      - _reference/kimmdy_hydrolysis.reaction.qmd
+      section: Hydrolysis
+    id: _reference
+  - id: dummy-sidebar
