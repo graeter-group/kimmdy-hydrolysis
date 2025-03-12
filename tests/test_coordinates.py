@@ -1,8 +1,7 @@
 from MDAnalysis.core.universe import Atom
 import MDAnalysis as mda
-import pytest
 import numpy as np
-from math import degrees, sqrt
+from math import sqrt
 
 from kimmdy_hydrolysis.utils import get_aproach_penalty
 
@@ -23,13 +22,6 @@ def test_normalize():
 
 def test_find_qm_waters_and_oh_by_example():
     pass
-
-
-def test_find_qm_waters_complains_if_cutoff_too_narrow():
-    with pytest.raises(ValueError) as e:
-        pass
-    # assert e.value.args[0] == "Only found 10 qm waters within 0.5, expected 15."
-
 
 def test_angle_penalties():
     gro = "tests/test_files/gly-npt.gro"
