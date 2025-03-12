@@ -12,17 +12,19 @@ from pathlib import Path
 logger = logging.getLogger("kimmdy.hydrolysis.utils")
 
 
-def read_bond_lengths(path: str|Path) -> dict[tuple[str, str], float]:
+def read_bond_lengths(path: str | Path) -> dict[tuple[str, str], float]:
     lengths = {}
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         next(f)
         for l in f:
-            i,j,d = l.strip().split(',')
-            lengths[(i,j)] = float(d)
+            i, j, d = l.strip().split(",")
+            lengths[(i, j)] = float(d)
     return lengths
 
 
-def ds_to_forces(ds: np.ndarray, dissociation_energy: float, b0: float, kb: float) -> np.ndarray:
+def ds_to_forces(
+    ds: np.ndarray, dissociation_energy: float, b0: float, kb: float
+) -> np.ndarray:
     beta = np.sqrt(kb / (2 * dissociation_energy))
     d_inflection = (beta * b0 + np.log(2)) / beta
     # if the bond is stretched beyond the inflection point,
@@ -33,13 +35,10 @@ def ds_to_forces(ds: np.ndarray, dissociation_energy: float, b0: float, kb: floa
 
     # kJ/mol/nm -> nN
     forces = (
-        2
-            * beta
-            * dissociation_energy
-            * np.exp(-beta * dds)
-            * (1 - np.exp(-beta * dds))
+        2 * beta * dissociation_energy * np.exp(-beta * dds) * (1 - np.exp(-beta * dds))
     ) * nN_per_kJ_per_mol_nm
     return forces
+
 
 def get_peptide_bonds_from_top(top) -> list[Bond]:
     bs = []
@@ -53,15 +52,13 @@ def get_peptide_bonds_from_top(top) -> list[Bond]:
 
     return bs
 
+
 def normalize(v):
     return v / np.linalg.norm(v)
 
+
 def get_aproach_penalty(
-    o_water: Atom,
-    c_carbonyl: Atom,
-    o_carbonyl: Atom,
-    n_peptide: Atom,
-    c_alpha: Atom
+    o_water: Atom, c_carbonyl: Atom, o_carbonyl: Atom, n_peptide: Atom, c_alpha: Atom
 ) -> tuple[float, float, float]:
 
     c = c_carbonyl.position
@@ -88,11 +85,9 @@ def get_aproach_penalty(
     # O-C-O angle close to angle of 107 deg
     # The BD is the angle between the approach vector of O_nucl
     # and the electrophilic C and the C=O bond
-    bd = degrees(
-        calc_angles(*AtomGroup([o_water, c_carbonyl, o_carbonyl]).positions)
-    )
+    bd = degrees(calc_angles(*AtomGroup([o_water, c_carbonyl, o_carbonyl]).positions))
     bd_penalty = abs(bd - 107)
- 
+
     # Flippin-Lodge angle
     # The FL is an angle that estimates the displacement of the nucleophile,
     # at its elevation, toward or away from the particular R and R' substituents
@@ -106,11 +101,14 @@ def get_aproach_penalty(
     max_bd_penalty = 180
     max_fl_penalty = 180
     max_distance_penalty = 5
-    penalty = ((bd_penalty / max_bd_penalty) + (fl_penalty / max_fl_penalty) + (min(distance, max_distance_penalty) / max_distance_penalty)) / 3
+    penalty = (
+        (bd_penalty / max_bd_penalty)
+        + (fl_penalty / max_fl_penalty)
+        + (min(distance, max_distance_penalty) / max_distance_penalty)
+    ) / 3
     # logger.info(f"Water O ix: {o_water.ix}")
     # logger.info(f"bd penalty: {bd_penalty}")
     # logger.info(f"fl penalty: {fl_penalty}")
     # logger.info(f"total angle penalty: {angle_penalty}")
     # logger.info(f"distance: {distance}")
     return angle_penalty, distance, penalty
-

@@ -67,7 +67,9 @@ def high_force_log_rate(force, temperature: float = T_EXPERIMENT):
     return log_k
 
 
-def experimental_reaction_rate_per_s(force: float, temperature: float=T_EXPERIMENT) -> float:
+def experimental_reaction_rate_per_s(
+    force: float, temperature: float = T_EXPERIMENT
+) -> float:
     critical_force = 0.7
     interpolation_width = 0.05
 
@@ -87,6 +89,7 @@ def experimental_reaction_rate_per_s(force: float, temperature: float=T_EXPERIME
 
     k = np.exp(log_k)
     return k
+
 
 def theoretical_reaction_rate_per_s(
     force: float = 0,
@@ -506,7 +509,6 @@ class HydrolysisReaction(ReactionPlugin):
 
         # reset to first frame
         frame = self.u.trajectory[0]
-
 
     def calculate_sasa(self, bonds, step: int = 1):
         logger.info(f"Calculating SASA for {len(bonds)} bonds. Step={step}")
