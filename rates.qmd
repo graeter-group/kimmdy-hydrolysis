@@ -51,6 +51,7 @@ But the theortical rates don't quite match the experimental rates.
 
 ```{python}
 from plotnine import * # pyright: ignore
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from kimmdy_hydrolysis.reaction import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate
@@ -60,6 +61,12 @@ import os
 root = os.getcwd()
 
 theme_set(theme_minimal())
+```
+
+
+```{python}
+#| eval: false
+plt.ion()
 ```
 
 Instead of calculating rates from the theoretical energies we can fit the rates to the experimental data directly.
@@ -90,10 +97,17 @@ model = sm.OLS.from_formula("log_k ~ t + f", data=df.query("not is_low_f"))
 model.fit().summary()
 ```
 
+
+```{python}
+model_294k = sm.OLS.from_formula("log_k ~ f", data=df.query("not is_low_f & t == 294.15"))
+model_294k.fit().summary()
+```
+
 add model predictions:
 
 ```{python}
 df['model_high_log_k'] = model.fit().predict(df.query("not is_low_f"))
+df['model_294k_log_k'] = model_294k.fit().predict(df.query("not is_low_f & t == 294.15"))
 ```
 
 Arrhenius plot:
@@ -105,12 +119,32 @@ p = (
   geom_point(size=5) +
   geom_point(aes(y='plugin_high_log_k'), size=5, shape='x') +
   geom_point(aes(y='model_high_log_k'), size=5, shape='.') +
+  geom_point(aes(y='model_294k_log_k'), size=5, shape='.', color='red') +
   scale_x_reverse() +
   guides(color=guide_legend(reverse=True)) +
   labs(
     y='log(k) [1/s]',
     x='Temperature [K]',
     color='Force [nN]'
+  )
+)
+p.show()
+```
+
+
+```{python}
+p = (
+  ggplot(df.query('not is_low_f & t == 294.15'), aes(x='f', y='log_k')) +
+  geom_smooth(method='lm', se=False) +
+  geom_point(size=5) +
+  geom_point(aes(y='plugin_high_log_k'), size=5, shape='x') +
+  geom_point(aes(y='model_high_log_k'), size=5, shape='.') +
+  geom_point(aes(y='model_294k_log_k'), size=5, shape='.', color='red') +
+  scale_x_reverse() +
+  guides(color=guide_legend(reverse=True)) +
+  labs(
+    x='Force [nN]',
+    y='log(k) [1/s]',
   )
 )
 p.show()

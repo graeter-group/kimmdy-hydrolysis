@@ -54,11 +54,6 @@ def low_force_log_rate(force):
 
 
 def high_force_log_rate(force, temperature: float = T_EXPERIMENT):
-    """
-    (Intercept) -20.342988   1.946146  -10.45 5.36e-10 ***
-    t             0.070648   0.006458   10.94 2.30e-10 ***
-    f             1.605233   0.100667   15.95 1.43e-13 ***
-    """
     log_slope_t = 0.070648
     log_slope_f = 1.605233
     log_offset = -20.342988
@@ -78,7 +73,7 @@ def experimental_reaction_rate_per_s(
     elif force > (critical_force + interpolation_width):
         log_k = high_force_log_rate(force, temperature)
     else:
-        # linear interpolation between the two linear regimes
+        # linear interpolation between the two log-linear regimes
         low = low_force_log_rate(force)
         high = high_force_log_rate(force)
         high_percentage = (force - (critical_force - interpolation_width)) / (
@@ -128,7 +123,7 @@ def theoretical_reaction_rate_per_s(
 
 
 class HydrolysisReaction(ReactionPlugin):
-    """A custom reaction plugin."""
+    """Hydrolyses peptide bonds of the backbone."""
 
     def get_recipe_collection(self, files: TaskFiles) -> RecipeCollection:
         logger = files.logger
@@ -259,7 +254,6 @@ class HydrolysisReaction(ReactionPlugin):
             )
             k_hyd = k_hyd_per_s * 1e-12
         else:
-            logger.info(f"Using experimental rates")
             k_hyd_per_s = experimental_reaction_rate_per_s(force, self.temperature)
 
             k_hyd = k_hyd_per_s * 1e-12  # rates in 1/ps
@@ -325,11 +319,10 @@ class HydrolysisReaction(ReactionPlugin):
         logger.info(f"Time: {self.u.trajectory.time:3} ps")
         logger.info(f"Time from runmanager: {ttime} ps")
 
-        # FIXME: ignore for now
         if round(self.u.trajectory.time, 3) != round(ttime, 3):
             m = f"Mismatch between time chosen by the runmanager and index received"
             logger.error(m)
-            # raise ValueError(m)
+            raise ValueError(m)
 
         water_os = self.u.select_atoms(
             f"name OW and resname SOL and around {self.config.cutoff} index {ix_cc}"
