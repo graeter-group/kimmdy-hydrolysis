@@ -106,9 +106,4 @@ def get_aproach_penalty(
         + (fl_penalty / max_fl_penalty)
         + (min(distance, max_distance_penalty) / max_distance_penalty)
     ) / 3
-    # logger.info(f"Water O ix: {o_water.ix}")
-    # logger.info(f"bd penalty: {bd_penalty}")
-    # logger.info(f"fl penalty: {fl_penalty}")
-    # logger.info(f"total angle penalty: {angle_penalty}")
-    # logger.info(f"distance: {distance}")
     return angle_penalty, distance, penalty

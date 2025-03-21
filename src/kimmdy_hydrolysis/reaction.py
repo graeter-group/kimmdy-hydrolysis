@@ -177,8 +177,7 @@ class HydrolysisReaction(ReactionPlugin):
                 self.bond_to_plumed_id[bondkey] = k
 
         self.init_universe(files)
-
-        self.calculate_sasa(bonds=self.bonds, step=self.step)
+        self.calculate_sasa()
 
         logger.debug(f"Got {len(self.times)} times for SASA calculation")
         logger.debug(
@@ -188,7 +187,7 @@ class HydrolysisReaction(ReactionPlugin):
         for i, b in enumerate(self.bonds):
             r = Recipe(
                 recipe_steps=DeferredRecipeSteps(
-                    key=i, callback=self.get_steps_for_bond_at_i
+                    key=i, callback=self.get_steps_for_bond_i_at_t
                 ),
                 rates=self.sasas_to_rates(sasas=self.sasa_per_bond[i], bond=b),
                 timespans=self.timespans,
@@ -271,8 +270,8 @@ class HydrolysisReaction(ReactionPlugin):
             rates.append(sasa_scaling * k_hyd)
         return rates
 
-    def get_steps_for_bond_at_i(
-        self, key: int, time_index: int, ttime: float
+    def get_steps_for_bond_i_at_t(
+        self, key: int, ttime: float
     ) -> list[RecipeStep]:
         b = self.bonds[key]
         ix_cc = int(b.ai) - 1  # C
@@ -298,26 +297,16 @@ class HydrolysisReaction(ReactionPlugin):
         o_carbonyl = self.u.atoms[ix_oc]
         n_peptide = self.u.atoms[ix_n]
 
-        # add 1 because the first frame is the initial frame
-        # for which we don't report a rate
-        frame = (time_index + 1) * self.step
-        # FIXME: is this wrong?
-        max_frames = len(self.u.trajectory)
         logger.info(
-            f"Max frames: {max_frames}, frame: {frame}, time_index: {time_index}"
-        )
-        logger.info(f"with steps: {self.step}")
-
-        frame = min(frame, max_frames - 1)
-        logger.info(f"New frame: {frame}")
-
-        logger.info(
-            f"Hydrolyzing bond between C with ix {ix_cc} and N with ix {ix_n} at time_index {time_index}. With step {self.step} results in frame index={frame}"
+            f"Hydrolyzing bond between C with ix {ix_cc} and N with ix {ix_n} at time {ttime} ps"
         )
 
-        self.u.trajectory[frame]
-        logger.info(f"Time: {self.u.trajectory.time:3} ps")
+        frame = int(ttime / self.ps_per_frame)
+        snapshot = self.u.trajectory[frame]
+
+        logger.info(f"Trajectory time: {self.u.trajectory.time:.3f} ps at frame {frame}")
         logger.info(f"Time from runmanager: {ttime} ps")
+        logger.info(f"Time of u.trajectory: {snapshot.time:.3f} ps")
 
         if round(self.u.trajectory.time, 3) != round(ttime, 3):
             m = f"Mismatch between time chosen by the runmanager and index received"
@@ -489,9 +478,18 @@ class HydrolysisReaction(ReactionPlugin):
         # reset to first frame just in case
         frame = self.u.trajectory[0]
         logger.info(f"First frame: {frame.frame} with time {frame.time} ps")
-        self.xtc_trr_ratio = timings.xtc_nst / timings.trr_nst
-        self.dt = timings.dt
         logger.info(f"timings: {timings}")
+        self.xtc_trr_ratio = timings.xtc_nst / timings.trr_nst
+
+        self.dt = timings.dt
+        self.nframes_stepsize = self.xtc_trr_ratio * self.step
+        # make sure the stepsize is an integer
+        if not self.nframes_stepsize.is_integer():
+            m = f"Stepsize {self.nframes_stepsize} is not an integer. Derived from xtc_nst {timings.xtc_nst} and trr_nst {timings.trr_nst}"
+            logger.error(m)
+            raise ValueError(m)
+
+        self.nframes_stepsize = int(self.nframes_stepsize)
 
         # validate that the next frame is dt * xtc_nst ps away
         frame = self.u.trajectory[1]
@@ -500,17 +498,19 @@ class HydrolysisReaction(ReactionPlugin):
             logger.error(m)
             raise ValueError(m)
 
+        self.ps_per_frame = round(self.dt * timings.xtc_nst, 3)
+
         # reset to first frame
         frame = self.u.trajectory[0]
 
-    def calculate_sasa(self, bonds, step: int = 1):
-        logger.info(f"Calculating SASA for {len(bonds)} bonds. Step={step}")
+    def calculate_sasa(self):
+        logger.info(f"Calculating SASA for {len(self.bonds)} bonds. Step={self.step}")
         logger.info(f"Universe has {len(self.u.trajectory)} frames")
         self.times = []
-        self.sasa_per_bond = [[] for _ in range(len(bonds))]
+        self.sasa_per_bond = [[] for _ in range(len(self.bonds))]
         sasa = MiniSasa(self.u)
         # skip the first frame
-        for frame in self.u.trajectory[1:]:
+        for frame in self.u.trajectory[1::self.nframes_stepsize]:
             time = round(frame.time, 3)
             logger.debug(
                 f"Calculating SASA for frame {frame.frame} with time rounded {time}"
@@ -518,7 +518,7 @@ class HydrolysisReaction(ReactionPlugin):
             self.times.append(time)
             sasa.update_structure()
             sasa.calc()
-            for i, b in enumerate(bonds):
+            for i, b in enumerate(self.bonds):
                 # NOTE:this breaks if the protein is not the first
                 # molecule in the universe
                 ix_cc = int(b.ai) - 1  # C
