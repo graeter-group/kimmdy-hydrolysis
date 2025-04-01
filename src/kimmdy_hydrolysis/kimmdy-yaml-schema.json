@@ -5,6 +5,12 @@
   "description": "Settings for peptide bond hydrolysis reaction",
   "additionalProperties": false,
   "properties": {
+    "recompute_sasa": {
+      "type": "boolean",
+      "description": "Recompute SASA even if a .kimmdy.sasa cache file is found.",
+      "pytype": "bool",
+      "default": false
+    },
     "cutoff": {
       "type": "number",
       "description": "Cutoff distance [A] for the reaction. Water within this distance from the peptide bond will be considered for hydrolysis.",

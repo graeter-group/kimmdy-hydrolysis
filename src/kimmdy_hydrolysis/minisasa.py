@@ -13,7 +13,6 @@ logger = logging.getLogger("kimmdy.hydrolysis")
 
 freesasa.setVerbosity(freesasa.silent)
 
-
 class MiniSasa:
     def __init__(self, u: mda.Universe):
         self.u = u
@@ -42,6 +41,7 @@ class MiniSasa:
 
     def calc(self):
         self.result = freesasa.calc(self.structure, self.params)
+        self.n_atoms: int = self.result.nAtoms()
         return self.result
 
     def per_atom(self, i):

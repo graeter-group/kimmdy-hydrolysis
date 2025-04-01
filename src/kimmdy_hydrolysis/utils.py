@@ -3,6 +3,7 @@ from math import degrees, sqrt
 
 from MDAnalysis.core.universe import Atom
 from kimmdy.topology.atomic import Bond
+from kimmdy.topology.topology import Topology
 import numpy as np
 from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.lib.distances import calc_angles
@@ -40,15 +41,15 @@ def ds_to_forces(
     return forces
 
 
-def get_peptide_bonds_from_top(top) -> list[Bond]:
-    bs = []
-    for b in top.bonds.values():
-        ai = top.atoms[b.ai]
-        aj = top.atoms[b.aj]
-        if ai.residue == "ACE" or aj.residue == "NME":
+def get_peptide_bonds_from_top(top: Topology) -> dict[str, Bond]:
+    bs = {}
+    for bond in top.bonds.values():
+        a = top.atoms[bond.ai]
+        b = top.atoms[bond.aj]
+        if a.residue in ["NME", "ACE"] or b.residue in ["NME", "ACE"]:
             continue
-        if ai.atom == "C" and aj.atom == "N":
-            bs.append(b)
+        if a.atom == "C" and b.atom == "N":
+            bs[a.nr] = bond
 
     return bs
 

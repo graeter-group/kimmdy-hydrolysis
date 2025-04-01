@@ -1,32 +1,24 @@
 import logging
 from math import inf
+from pathlib import Path
+from typing import Any
+
+import MDAnalysis as mda
+import numpy as np
 from kimmdy.parsing import read_distances_dat, read_plumed
+from kimmdy.plugins import ReactionPlugin
+from kimmdy.recipe import (Bind, Break, CustomTopMod, DeferredRecipeSteps,
+                           Recipe, RecipeCollection, RecipeStep, Relax)
+from kimmdy.tasks import TaskFiles
 from kimmdy.topology.atomic import Bond
 from kimmdy.topology.topology import Topology
 from kimmdy.topology.utils import get_residue_by_bonding
-import numpy as np
-from kimmdy_hydrolysis.minisasa import MiniSasa
-from kimmdy_hydrolysis.constants import K_b, T_EXPERIMENT
 
-import MDAnalysis as mda
-from kimmdy.plugins import ReactionPlugin
-from kimmdy.recipe import (
-    Bind,
-    Break,
-    CustomTopMod,
-    Recipe,
-    RecipeCollection,
-    RecipeStep,
-    Relax,
-    DeferredRecipeSteps,
-)
-from kimmdy.tasks import TaskFiles
-from kimmdy_hydrolysis.utils import (
-    ds_to_forces,
-    get_aproach_penalty,
-    get_peptide_bonds_from_top,
-    read_bond_lengths,
-)
+from kimmdy_hydrolysis.constants import T_EXPERIMENT, K_b
+from kimmdy_hydrolysis.minisasa import MiniSasa
+from kimmdy_hydrolysis.utils import (ds_to_forces, get_aproach_penalty,
+                                     get_peptide_bonds_from_top,
+                                     read_bond_lengths)
 
 logger = logging.getLogger("kimmdy.hydrolysis")
 
@@ -152,7 +144,7 @@ class HydrolysisReaction(ReactionPlugin):
         self.temperature = self.config.temperature
         self.step = self.config.step
         self.recipes = []
-        self.sasa_per_bond: list[list[float]] = []
+        self.sasa_per_bond: dict[str, list[float]] = {}
         # times are shared between all bonds
         self.times: list[float] = []
         self.timespans: list[tuple[float, float]]
@@ -176,20 +168,20 @@ class HydrolysisReaction(ReactionPlugin):
                 bondkey = tuple(sorted(atoms, key=int))
                 self.bond_to_plumed_id[bondkey] = k
 
-        self.init_universe(files)
-        self.calculate_sasa()
+        self.init_timings(files)
+        did_read_sasa = self.use_cached_sasa()
+        if not did_read_sasa:
+            self.init_universe()
+            self.calculate_sasa()
+            self.cache_sasa()
 
-        logger.debug(f"Got {len(self.times)} times for SASA calculation")
-        logger.debug(
-            f"Latest SASA values for each bond: {[ss[-1] for ss in self.sasa_per_bond]}"
-        )
-
-        for i, b in enumerate(self.bonds):
+        logger.info(f"Got {len(self.times)} times for SASA calculation")
+        for id_c, b in self.bonds.items():
             r = Recipe(
                 recipe_steps=DeferredRecipeSteps(
-                    key=i, callback=self.get_steps_for_bond_i_at_t
+                    key=id_c, callback=self.get_steps_for_id_c_at_t
                 ),
-                rates=self.sasas_to_rates(sasas=self.sasa_per_bond[i], bond=b),
+                rates=self.sasas_to_rates(sasas=self.sasa_per_bond[id_c], bond=b),
                 timespans=self.timespans,
             )
             self.recipes.append(r)
@@ -270,9 +262,13 @@ class HydrolysisReaction(ReactionPlugin):
             rates.append(sasa_scaling * k_hyd)
         return rates
 
-    def get_steps_for_bond_i_at_t(
-        self, key: int, ttime: float
+    def get_steps_for_id_c_at_t(
+        self, key: str, ttime: float
     ) -> list[RecipeStep]:
+        """Get the steps for a given bond at a given time.
+
+        The bond is identified by the atom id of the C atom.
+        """
         b = self.bonds[key]
         ix_cc = int(b.ai) - 1  # C
         ix_n = int(b.aj) - 1  # N
@@ -455,31 +451,29 @@ class HydrolysisReaction(ReactionPlugin):
             timespans.append((times[i], times[i + 1]))
         return timespans
 
-    def init_universe(self, files: TaskFiles):
-        gro = files.input["gro"]
-        xtc = files.input["xtc"]
-        logger.debug(f"Using gro: {gro}")
-        logger.debug(f"Using xtc: {xtc}")
+    def init_timings(self, files: TaskFiles):
+        self.gro = files.input["gro"]
+        self.xtc = files.input["xtc"]
+        logger.debug(f"Using gro: {self.gro}")
+        logger.debug(f"Using xtc: {self.xtc}")
 
-        if xtc is None or gro is None:
+        if self.xtc is None or self.gro is None:
             m = "No xtc file found"
             logger.error(m)
             raise ValueError(m)
-        logger.info(f"Using xtc {xtc.name} in {xtc.parent.name} for trajectory")
-        self.u = mda.Universe(str(gro), str(xtc))
+        logger.info(f"Using xtc {self.xtc.name} in {self.xtc.parent.name} for trajectory")
+        self.sasafile = self.xtc.with_name('.kimmdy.sasa')
 
-        md_instance = xtc.stem
+        md_instance = self.xtc.stem
         timings = self.runmng.timeinfos.get(md_instance)
         if timings is None:
             m = f"No timings from mdp file found for {md_instance}"
             logger.error(m)
             raise ValueError(m)
 
-        # reset to first frame just in case
-        frame = self.u.trajectory[0]
-        logger.info(f"First frame: {frame.frame} with time {frame.time} ps")
         logger.info(f"timings: {timings}")
-        self.xtc_trr_ratio = timings.xtc_nst / timings.trr_nst
+        self.timings = timings
+        self.xtc_trr_ratio = timings.trr_nst / timings.xtc_nst
 
         self.dt = timings.dt
         self.nframes_stepsize = self.xtc_trr_ratio * self.step
@@ -490,15 +484,20 @@ class HydrolysisReaction(ReactionPlugin):
             raise ValueError(m)
 
         self.nframes_stepsize = int(self.nframes_stepsize)
+        self.ps_per_frame = round(self.dt * timings.xtc_nst, 3)
 
+    def init_universe(self):
+        self.u = mda.Universe(str(self.gro), str(self.xtc))
+        # reset to first frame just in case
+        frame = self.u.trajectory[0]
+
+        logger.info(f"First frame: {frame.frame} with time {frame.time} ps")
         # validate that the next frame is dt * xtc_nst ps away
         frame = self.u.trajectory[1]
-        if round(frame.time, 3) != round(self.dt, 3) * timings.xtc_nst:
-            m = f"Expected the next frame to be {self.dt * timings.xtc_nst} ps away, got {frame.time} ps"
+        if round(frame.time, 3) != round(self.dt, 3) * self.timings.xtc_nst:
+            m = f"Expected the next frame to be {self.dt * self.timings.xtc_nst} ps away, got {frame.time} ps"
             logger.error(m)
             raise ValueError(m)
-
-        self.ps_per_frame = round(self.dt * timings.xtc_nst, 3)
 
         # reset to first frame
         frame = self.u.trajectory[0]
@@ -507,8 +506,9 @@ class HydrolysisReaction(ReactionPlugin):
         logger.info(f"Calculating SASA for {len(self.bonds)} bonds. Step={self.step}")
         logger.info(f"Universe has {len(self.u.trajectory)} frames")
         self.times = []
-        self.sasa_per_bond = [[] for _ in range(len(self.bonds))]
+        self.sasa_per_bond = {k: [] for k in self.bonds.keys()}
         sasa = MiniSasa(self.u)
+        not_found_ids = []
         # skip the first frame
         for frame in self.u.trajectory[1::self.nframes_stepsize]:
             time = round(frame.time, 3)
@@ -518,15 +518,153 @@ class HydrolysisReaction(ReactionPlugin):
             self.times.append(time)
             sasa.update_structure()
             sasa.calc()
-            for i, b in enumerate(self.bonds):
-                # NOTE:this breaks if the protein is not the first
-                # molecule in the universe
-                ix_cc = int(b.ai) - 1  # C
+            not_found_ids = []
+            for k in self.bonds.keys():
+                ix_cc = int(k) - 1
+                if ix_cc > sasa.n_atoms:
+                    not_found_ids.append(k)
+                    continue
                 s = sasa.per_atom(ix_cc)
-                self.sasa_per_bond[i].append(s)
+                self.sasa_per_bond[k].append(s)
+
+        if len(not_found_ids) > 0:
+            m = f"Could not find {len(not_found_ids)} bonds in the trajectory: {not_found_ids}"
+            logger.warning(m)
 
         # but retain the first time [0.0] because
         # because it will combine with the next time
         # into the first timespan
         # the times are in ps. We round to fs.
         self.timespans = self.times_to_timespans([0.0] + self.times)
+
+    def cache_sasa(self):
+        write_sasa(
+            times=self.times,
+            sasa_per_bond=self.sasa_per_bond,
+            metadata={
+                "dt": self.dt,
+                "xtc_trr_ratio": self.xtc_trr_ratio,
+                "step": self.step,
+                "ps_per_frame": self.ps_per_frame,
+                "nframes_stepsize": self.nframes_stepsize,
+            },
+            path=self.sasafile,
+        )
+
+    def use_cached_sasa(self) -> bool:
+        if self.config.recompute_sasa:
+            return False
+        if not Path(self.sasafile).exists():
+            m = f"sasafile {self.sasafile} does not exist. Not using cached SASA."
+            logger.info(m)
+            return False
+
+        result = read_sasa(self.sasafile)
+        if result is None:
+            m = f"Could not read sasafile {self.sasafile}. Not using cached SASA."
+            logger.warning(m)
+            return False
+        metadata, times, sasa_per_bond = result
+
+        if float(metadata["dt"]) != self.dt:
+            m = f"dt from sasafile {metadata['dt']} does not match {self.dt} from mdp. Not using cached SASA."
+            logger.warning(m)
+            return False
+        if float(metadata["xtc_trr_ratio"]) != self.xtc_trr_ratio:
+            m = f"xtc_trr_ratio from sasafile {metadata['xtc_trr_ratio']} does not match {self.xtc_trr_ratio} from mdp. Not using cached SASA."
+            logger.warning(m)
+            return False
+        if int(metadata["step"]) != self.step:
+            m = f"step from sasafile {metadata['step']} does not match {self.step} from config. Not using cached SASA."
+            logger.warning(m)
+            return False
+        if float(metadata["ps_per_frame"]) != self.ps_per_frame:
+            m = f"ps_per_frame from sasafile {metadata['ps_per_frame']} does not match {self.ps_per_frame} from mdp. Not using cached SASA."
+            logger.warning(m)
+            return False
+        if int(metadata["nframes_stepsize"]) != self.nframes_stepsize:
+            m = f"nframes_stepsize from sasafile {metadata['nframes_stepsize']} does not match {self.nframes_stepsize} from mdp. Not using cached SASA."
+            logger.warning(m)
+            return False
+
+        self.times = times
+        self.sasa_per_bond = sasa_per_bond
+        self.timespans = self.times_to_timespans([0.0] + self.times)
+
+        m = f"Using cached SASA from {self.sasafile}"
+        logger.info(m)
+
+        return True
+
+
+def write_sasa(
+    times: list[float],
+    sasa_per_bond: dict[str, list[float]],
+    metadata: dict[str, Any],
+    path: str | Path
+) -> None:
+    with open(path, "w") as f:
+        # header with metadata
+        # df, xtc_trr_ratio, dt, step, ps_per_frame, nframes_stepsize,
+        f.write('---meta\n')
+        for key, value in metadata.items():
+            f.write(f"{key} = {value}\n")
+
+        # times
+        f.write(f"---times\n")
+        for t in times:
+            f.write(f"{t:.3f}\n")
+
+        # sasa
+        f.write(f"---sasa\n")
+        for k, sasas in sasa_per_bond.items():
+            f.write(f"#{k}\n")
+            for s in sasas:
+                f.write(f"{s}\n")
+
+def read_sasa(
+    path: str | Path
+) -> None|tuple[dict, list[float], dict[str, list[float]]]:
+    with open(path, "r") as f:
+        l = f.readline()
+        if not l.startswith("---meta"):
+            m = f"File {path} does not start with ---meta. Not using cached SASA."
+            logger.warning(m)
+            return None
+
+        metadata = {}
+        l = f.readline()
+        while not l.startswith("---"):
+            key, value = l.split("=")
+            metadata[key.strip()] = value.strip()
+            l = f.readline()
+
+        times = []
+        if not l.startswith("---times"):
+            m = f"File {path} does not contain ---times. Not using cached SASA."
+            logger.warning(m)
+            return None
+
+        l = f.readline()
+        while not l.startswith("---"):
+            times.append(float(l.strip()))
+            l = f.readline()
+
+        sasa_per_bond = {}
+        if not l.startswith("---sasa"):
+            m = f"File {path} does not contain ---sasa. Not using cached SASA."
+            logger.warning(m)
+            return None
+
+        k = None
+        l = f.readline()
+        while l:
+            if l.startswith("#"):
+                k = l.strip()[1:]
+                sasa_per_bond[k] = []
+            else:
+                sasa_per_bond[k].append(float(l.strip()))
+            l = f.readline()
+
+
+    return metadata, times, sasa_per_bond
