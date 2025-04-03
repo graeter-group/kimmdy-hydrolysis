@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.40">
+<meta name="generator" content="quarto-1.5.57">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -89,12 +89,12 @@ div.csl-indent {
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-a431cea1ffaaabcd90937e29fb45e5e3.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-ce50903b3b6785dcce4eeea31421b3d7.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-7d01740909c13c6217a87009a251226c.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-aaa499893ec24c1a8121fe29cf95b024.min.css" rel="prefetch" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="prefetch" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -289,24 +289,25 @@ k=A e^{-\Delta E / k_B T}
 <p>But the theortical rates don’t quite match the experimental rates.</p>
 <section id="solution" class="level1">
 <h1>Solution</h1>
-<div id="1bb6f40f" class="cell" data-execution_count="1">
+<div id="38fc2e4f" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> plotnine <span class="im">import</span> <span class="op">*</span> <span class="co"># pyright: ignore</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> kimmdy_hydrolysis.reaction <span class="im">import</span> high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> os.getcwd()</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>theme_set(theme_minimal())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="7">
-<pre><code>&lt;plotnine.themes.theme_minimal.theme_minimal at 0x755158520940&gt;</code></pre>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> kimmdy_hydrolysis.reaction <span class="im">import</span> high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> os.getcwd()</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>theme_set(theme_minimal())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div id="503e50c3" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>plt.ion()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Instead of calculating rates from the theoretical energies we can fit the rates to the experimental data directly.</p>
 <p>Get the data from the SI and add predicted rates from hydrolysis plugin function:</p>
-<div id="6c28bec6" class="cell" data-execution_count="2">
+<div id="f90cf67e" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"./assets/afm-rates.csv"</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> df.melt(id_vars<span class="op">=</span>[<span class="st">"f"</span>], var_name<span class="op">=</span><span class="st">"t"</span>, value_name<span class="op">=</span><span class="st">"rate"</span>)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"t"</span>] <span class="op">=</span> pd.to_numeric(df[<span class="st">"t"</span>], errors<span class="op">=</span><span class="st">"coerce"</span>)</span>
@@ -319,7 +320,7 @@ k=A e^{-\Delta E / k_B T}
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'plugin_low_log_k'</span>] <span class="op">=</span> [low_force_log_rate(force<span class="op">=</span>f) <span class="cf">for</span> f, t <span class="kw">in</span> <span class="bu">zip</span>(df[<span class="st">"f"</span>], df[<span class="st">"t"</span>])]</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'plugin_log_k'</span>] <span class="op">=</span> np.log(df[<span class="st">'plugin_k'</span>])</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="8">
+<div class="cell-output cell-output-display" data-execution_count="2">
 <div>
 
 
@@ -412,12 +413,12 @@ k=A e^{-\Delta E / k_B T}
 </div>
 </div>
 <p>Fit model log(k) ~ t + f:</p>
-<div id="e246750b" class="cell" data-execution_count="3">
+<div id="7efeee96" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> sm.OLS.from_formula(<span class="st">"log_k ~ t + f"</span>, data<span class="op">=</span>df.query(<span class="st">"not is_low_f"</span>))</span>
 <span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>model.fit().summary()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="9">
+<div class="cell-output cell-output-display" data-execution_count="3">
 <table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
 <caption>OLS Regression Results</caption>
 <tbody>
@@ -441,13 +442,13 @@ k=A e^{-\Delta E / k_B T}
 </tr>
 <tr class="even">
 <td data-quarto-table-cell-role="th">Date:</td>
-<td>Wed, 12 Mar 2025</td>
+<td>Tue, 01 Apr 2025</td>
 <td data-quarto-table-cell-role="th">Prob (F-statistic):</td>
 <td>1.56e-14</td>
 </tr>
 <tr class="odd">
 <td data-quarto-table-cell-role="th">Time:</td>
-<td>16:34:57</td>
+<td>14:23:30</td>
 <td data-quarto-table-cell-role="th">Log-Likelihood:</td>
 <td>14.858</td>
 </tr>
@@ -552,54 +553,209 @@ k=A e^{-\Delta E / k_B T}
 <br><br>Notes:<br>[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.<br>[2] The condition number is large, 2.06e+04. This might indicate that there are<br>strong multicollinearity or other numerical problems.
 </div>
 </div>
+<div id="dc78aa18" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>model_294k <span class="op">=</span> sm.OLS.from_formula(<span class="st">"log_k ~ f"</span>, data<span class="op">=</span>df.query(<span class="st">"not is_low_f &amp; t == 294.15"</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>model_294k.fit().summary()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<caption>OLS Regression Results</caption>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Dep. Variable:</td>
+<td>log_k</td>
+<td data-quarto-table-cell-role="th">R-squared:</td>
+<td>0.981</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Model:</td>
+<td>OLS</td>
+<td data-quarto-table-cell-role="th">Adj. R-squared:</td>
+<td>0.975</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Method:</td>
+<td>Least Squares</td>
+<td data-quarto-table-cell-role="th">F-statistic:</td>
+<td>159.0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Date:</td>
+<td>Tue, 01 Apr 2025</td>
+<td data-quarto-table-cell-role="th">Prob (F-statistic):</td>
+<td>0.00108</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Time:</td>
+<td>14:23:30</td>
+<td data-quarto-table-cell-role="th">Log-Likelihood:</td>
+<td>6.8454</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">No. Observations:</td>
+<td>5</td>
+<td data-quarto-table-cell-role="th">AIC:</td>
+<td>-9.691</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Df Residuals:</td>
+<td>3</td>
+<td data-quarto-table-cell-role="th">BIC:</td>
+<td>-10.47</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Df Model:</td>
+<td>1</td>
+<td data-quarto-table-cell-role="th"></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Covariance Type:</td>
+<td>nonrobust</td>
+<td data-quarto-table-cell-role="th"></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+
+<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<tbody>
+<tr class="odd">
+<td></td>
+<td data-quarto-table-cell-role="th">coef</td>
+<td data-quarto-table-cell-role="th">std err</td>
+<td data-quarto-table-cell-role="th">t</td>
+<td data-quarto-table-cell-role="th">P&gt;|t|</td>
+<td data-quarto-table-cell-role="th">[0.025</td>
+<td data-quarto-table-cell-role="th">0.975]</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Intercept</td>
+<td>0.4216</td>
+<td>0.155</td>
+<td>2.722</td>
+<td>0.072</td>
+<td>-0.071</td>
+<td>0.914</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">f</td>
+<td>1.5839</td>
+<td>0.126</td>
+<td>12.608</td>
+<td>0.001</td>
+<td>1.184</td>
+<td>1.984</td>
+</tr>
+</tbody>
+</table>
+
+
+<table class="simpletable caption-top table table-sm table-striped small" data-quarto-postprocess="true">
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Omnibus:</td>
+<td>nan</td>
+<td data-quarto-table-cell-role="th">Durbin-Watson:</td>
+<td>2.105</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Prob(Omnibus):</td>
+<td>nan</td>
+<td data-quarto-table-cell-role="th">Jarque-Bera (JB):</td>
+<td>0.617</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Skew:</td>
+<td>0.204</td>
+<td data-quarto-table-cell-role="th">Prob(JB):</td>
+<td>0.734</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">Kurtosis:</td>
+<td>1.328</td>
+<td data-quarto-table-cell-role="th">Cond. No.</td>
+<td>8.80</td>
+</tr>
+</tbody>
+</table>
+<br><br>Notes:<br>[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+</div>
+</div>
 <p>add model predictions:</p>
-<div id="ce65ab8b" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'model_high_log_k'</span>] <span class="op">=</span> model.fit().predict(df.query(<span class="st">"not is_low_f"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="2c748dcd" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'model_high_log_k'</span>] <span class="op">=</span> model.fit().predict(df.query(<span class="st">"not is_low_f"</span>))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'model_294k_log_k'</span>] <span class="op">=</span> model_294k.fit().predict(df.query(<span class="st">"not is_low_f &amp; t == 294.15"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Arrhenius plot:</p>
-<div id="c1f7f412" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> (</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  ggplot(df.query(<span class="st">'not is_low_f'</span>), aes(x<span class="op">=</span><span class="st">'t'</span>, y<span class="op">=</span><span class="st">'log_k'</span>, color<span class="op">=</span><span class="st">'factor(f)'</span>)) <span class="op">+</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  geom_smooth(method<span class="op">=</span><span class="st">'lm'</span>, se<span class="op">=</span><span class="va">False</span>) <span class="op">+</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  geom_point(size<span class="op">=</span><span class="dv">5</span>) <span class="op">+</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'plugin_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'x'</span>) <span class="op">+</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'model_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'.'</span>) <span class="op">+</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  scale_x_reverse() <span class="op">+</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  guides(color<span class="op">=</span>guide_legend(reverse<span class="op">=</span><span class="va">True</span>)) <span class="op">+</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  labs(</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">'log(k) [1/s]'</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Temperature [K]'</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'Force [nN]'</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>p.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="119a1fd0" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> (</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  ggplot(df.query(<span class="st">'not is_low_f'</span>), aes(x<span class="op">=</span><span class="st">'t'</span>, y<span class="op">=</span><span class="st">'log_k'</span>, color<span class="op">=</span><span class="st">'factor(f)'</span>)) <span class="op">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  geom_smooth(method<span class="op">=</span><span class="st">'lm'</span>, se<span class="op">=</span><span class="va">False</span>) <span class="op">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  geom_point(size<span class="op">=</span><span class="dv">5</span>) <span class="op">+</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'plugin_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'x'</span>) <span class="op">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'model_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'.'</span>) <span class="op">+</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'model_294k_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'.'</span>, color<span class="op">=</span><span class="st">'red'</span>) <span class="op">+</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  scale_x_reverse() <span class="op">+</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  guides(color<span class="op">=</span>guide_legend(reverse<span class="op">=</span><span class="va">True</span>)) <span class="op">+</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  labs(</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">'log(k) [1/s]'</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Temperature [K]'</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'Force [nN]'</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>p.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="rates_files/figure-html/cell-6-output-1.png" width="672" height="480" class="figure-img"></p>
+<p><img src="rates_files/figure-html/cell-8-output-1.png" width="640" height="480" class="figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="07385626" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> (</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  ggplot(df, aes(x<span class="op">=</span><span class="st">'t'</span>, y<span class="op">=</span><span class="st">'log_k'</span>, color<span class="op">=</span><span class="st">'factor(f)'</span>)) <span class="op">+</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># geom_smooth(method='lm', se=False) +</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  geom_point(size<span class="op">=</span><span class="dv">5</span>) <span class="op">+</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'plugin_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'x'</span>) <span class="op">+</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  scale_x_reverse() <span class="op">+</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  guides(color<span class="op">=</span>guide_legend(reverse<span class="op">=</span><span class="va">True</span>)) <span class="op">+</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  labs(</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">'log(k) [1/s]'</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Temperature [K]'</span>,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'Force [nN]'</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>p.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="a1f321bf" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> (</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  ggplot(df.query(<span class="st">'not is_low_f &amp; t == 294.15'</span>), aes(x<span class="op">=</span><span class="st">'f'</span>, y<span class="op">=</span><span class="st">'log_k'</span>)) <span class="op">+</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  geom_smooth(method<span class="op">=</span><span class="st">'lm'</span>, se<span class="op">=</span><span class="va">False</span>) <span class="op">+</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  geom_point(size<span class="op">=</span><span class="dv">5</span>) <span class="op">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'plugin_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'x'</span>) <span class="op">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'model_high_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'.'</span>) <span class="op">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'model_294k_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'.'</span>, color<span class="op">=</span><span class="st">'red'</span>) <span class="op">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  scale_x_reverse() <span class="op">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  guides(color<span class="op">=</span>guide_legend(reverse<span class="op">=</span><span class="va">True</span>)) <span class="op">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  labs(</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Force [nN]'</span>,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">'log(k) [1/s]'</span>,</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>p.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="rates_files/figure-html/cell-7-output-1.png" width="672" height="480" class="figure-img"></p>
+<p><img src="rates_files/figure-html/cell-9-output-1.png" width="640" height="480" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="2dc0ea56" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> (</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  ggplot(df, aes(x<span class="op">=</span><span class="st">'t'</span>, y<span class="op">=</span><span class="st">'log_k'</span>, color<span class="op">=</span><span class="st">'factor(f)'</span>)) <span class="op">+</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># geom_smooth(method='lm', se=False) +</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  geom_point(size<span class="op">=</span><span class="dv">5</span>) <span class="op">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  geom_point(aes(y<span class="op">=</span><span class="st">'plugin_log_k'</span>), size<span class="op">=</span><span class="dv">5</span>, shape<span class="op">=</span><span class="st">'x'</span>) <span class="op">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  scale_x_reverse() <span class="op">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  guides(color<span class="op">=</span>guide_legend(reverse<span class="op">=</span><span class="va">True</span>)) <span class="op">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  labs(</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    y<span class="op">=</span><span class="st">'log(k) [1/s]'</span>,</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    x<span class="op">=</span><span class="st">'Temperature [K]'</span>,</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="st">'Force [nN]'</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>p.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="rates_files/figure-html/cell-10-output-1.png" width="640" height="480" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -843,6 +999,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   });
   clipboard.on('success', onCopySuccess);
   if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
     const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
       text: getTextToCopy,
       container: window.document.getElementById('quarto-embedded-source-code-modal')
@@ -953,6 +1111,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       if (window.Quarto?.typesetMath) {
         window.Quarto.typesetMath(note);
       }
+      // TODO in 1.5, we should make sure this works without a callout special case
       if (note.classList.contains("callout")) {
         return note.outerHTML;
       } else {

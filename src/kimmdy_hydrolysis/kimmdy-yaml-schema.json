@@ -11,6 +11,16 @@
       "pytype": "bool",
       "default": false
     },
+    "sasa_algorithm": {
+      "type": "string",
+      "description": "Tool to use for calculating the SASA (solvent accessible surface area).",
+      "pytype": "str",
+      "default": "gmx",
+      "enum": [
+        "gmx",
+        "freesasa"
+      ]
+    },
     "cutoff": {
       "type": "number",
       "description": "Cutoff distance [A] for the reaction. Water within this distance from the peptide bond will be considered for hydrolysis.",

@@ -8,19 +8,28 @@
 
 | Name | Description |
 | --- | --- |
-| [HydrolysisReaction](#kimmdy_hydrolysis.reaction.HydrolysisReaction) | A custom reaction plugin. |
+| [HydrolysisReaction](#kimmdy_hydrolysis.reaction.HydrolysisReaction) | Hydrolyses peptide bonds of the backbone. |
 
 ### HydrolysisReaction { #kimmdy_hydrolysis.reaction.HydrolysisReaction }
 
 `reaction.HydrolysisReaction()`
 
-A custom reaction plugin.
+Hydrolyses peptide bonds of the backbone.
 
 #### Methods
 
 | Name | Description |
 | --- | --- |
+| [get_steps_for_id_c_at_t](#kimmdy_hydrolysis.reaction.HydrolysisReaction.get_steps_for_id_c_at_t) | Get the steps for a given bond at a given time. |
 | [times_to_timespans](#kimmdy_hydrolysis.reaction.HydrolysisReaction.times_to_timespans) | Transforms an array of times into a list of time intervals |
+
+##### get_steps_for_id_c_at_t { #kimmdy_hydrolysis.reaction.HydrolysisReaction.get_steps_for_id_c_at_t }
+
+`reaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)`
+
+Get the steps for a given bond at a given time.
+
+The bond is identified by the atom id of the C atom.
 
 ##### times_to_timespans { #kimmdy_hydrolysis.reaction.HydrolysisReaction.times_to_timespans }
 
@@ -35,16 +44,7 @@ as tuples of (start, end)
 
 | Name | Description |
 | --- | --- |
-| [high_force_log_rate](#kimmdy_hydrolysis.reaction.high_force_log_rate) | (Intercept) -20.342988   1.946146  -10.45 5.36e-10 *** |
 | [theoretical_reaction_rate_per_s](#kimmdy_hydrolysis.reaction.theoretical_reaction_rate_per_s) | Calculate reaction rate in 1/s |
-
-### high_force_log_rate { #kimmdy_hydrolysis.reaction.high_force_log_rate }
-
-`reaction.high_force_log_rate(force, temperature=T_EXPERIMENT)`
-
-(Intercept) -20.342988   1.946146  -10.45 5.36e-10 ***
-t             0.070648   0.006458   10.94 2.30e-10 ***
-f             1.605233   0.100667   15.95 1.43e-13 ***
 
 ### theoretical_reaction_rate_per_s { #kimmdy_hydrolysis.reaction.theoretical_reaction_rate_per_s }
 

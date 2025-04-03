@@ -14,105 +14,14 @@ from kimmdy.topology.atomic import Bond
 from kimmdy.topology.topology import Topology
 from kimmdy.topology.utils import get_residue_by_bonding
 
-from kimmdy_hydrolysis.constants import T_EXPERIMENT, K_b
 from kimmdy_hydrolysis.minisasa import MiniSasa
 from kimmdy_hydrolysis.utils import (ds_to_forces, get_aproach_penalty,
                                      get_peptide_bonds_from_top,
                                      read_bond_lengths)
+from kimmdy_hydrolysis.rates import (experimental_reaction_rate_per_s,
+                                        theoretical_reaction_rate_per_s)
 
 logger = logging.getLogger("kimmdy.hydrolysis")
-
-
-def e_ts1(
-    force: float = 0,
-    ts1: float = 80,
-    ts1_force_scaling: float = 1.67,
-) -> float:
-    return ts1 - ts1_force_scaling * force
-
-
-def e_ts2(
-    force: float = 0,
-    ts2: float = 92,
-    ts2_force_scaling: float = 25.83,
-) -> float:
-    return ts2 - ts2_force_scaling * force
-
-
-def low_force_log_rate(force):
-    log_slope = 26.26
-    log_offset = -19.77
-    return log_slope * force + log_offset
-
-
-def high_force_log_rate(force, temperature: float = T_EXPERIMENT):
-    log_slope_t = 0.070648
-    log_slope_f = 1.605233
-    log_offset = -20.342988
-    log_k = log_offset + log_slope_t * temperature + log_slope_f * force
-
-    return log_k
-
-
-def experimental_reaction_rate_per_s(
-    force: float, temperature: float = T_EXPERIMENT
-) -> float:
-    critical_force = 0.7
-    interpolation_width = 0.05
-
-    if force <= (critical_force - interpolation_width):
-        log_k = low_force_log_rate(force)
-    elif force > (critical_force + interpolation_width):
-        log_k = high_force_log_rate(force, temperature)
-    else:
-        # linear interpolation between the two log-linear regimes
-        low = low_force_log_rate(force)
-        high = high_force_log_rate(force)
-        high_percentage = (force - (critical_force - interpolation_width)) / (
-            2 * interpolation_width
-        )
-        low_percentage = 1 - high_percentage
-        log_k = low_percentage * low + high_percentage * high
-
-    k = np.exp(log_k)
-    return k
-
-
-def theoretical_reaction_rate_per_s(
-    force: float = 0,
-    ts1: float = 80,
-    ts2: float = 92,
-    ts1_force_scaling: float = 1.67,
-    ts2_force_scaling: float = 25.83,
-    A: float = 1e11,  # 1/s
-    temperature: float = 300,
-    ph_value: float = 7.4,
-) -> float:
-    """Calculate reaction rate in 1/s
-
-    see SI of pill et al. 2019
-    <http://dx.doi.org/10.1002/anie.201902752>
-    """
-    # energy barriers in kJ/mol
-    # high force regime, TS1 is rate-determining
-    E_ts1 = e_ts1(force, ts1, ts1_force_scaling)
-    # low force regime, TS2 is rate-determining
-    E_ts2 = e_ts2(force, ts2, ts2_force_scaling)
-
-    # concentration of OH-
-    c_oh = 10 ** (-(14 - ph_value))
-    c_oh_experiment = 10 ** (-(14 - 7.4))
-
-    A1 = A / c_oh_experiment / 10
-    k1 = A1 * np.exp(-E_ts1 / (K_b * temperature))
-    k2 = A1 * np.exp(-E_ts2 / (K_b * temperature))  # k2' in the paper
-    # reaction rate in 1/s (depending on how A is chosen)
-    k_hyd = (k1 * k2 * c_oh) / (k1 + k2)
-
-    logger.debug(f"TS1: {E_ts1} TS2: {E_ts2} Force: {force} k_hyd: {k_hyd}")
-
-    return k_hyd
-
 
 class HydrolysisReaction(ReactionPlugin):
     """Hydrolyses peptide bonds of the backbone."""
@@ -150,6 +59,15 @@ class HydrolysisReaction(ReactionPlugin):
         self.timespans: list[tuple[float, float]]
         self.bonds = get_peptide_bonds_from_top(self.runmng.top)
         plumed = None
+
+        self.init_timings(files)
+
+        did_read_sasa = self.use_cached_sasa()
+        if not did_read_sasa:
+            self.init_universe()
+            self.calculate_sasa()
+            self.cache_sasa()
+
         if self.config.external_force == -1:
             plumed_out = files.input["plumed_out"]
             plumed_in = files.input["plumed"]
@@ -157,7 +75,7 @@ class HydrolysisReaction(ReactionPlugin):
                 m = f"External force not specified but no plumed file found"
                 logger.error(m)
                 raise ValueError(m)
-            self.distances = read_distances_dat(plumed_out)
+            self.distances = read_distances_dat(path=plumed_out, stride=self.nframes_stepsize)
             plumed = read_plumed(plumed_in)
 
             self.bond_to_plumed_id = {}
@@ -167,13 +85,6 @@ class HydrolysisReaction(ReactionPlugin):
                 atoms = v["atoms"]
                 bondkey = tuple(sorted(atoms, key=int))
                 self.bond_to_plumed_id[bondkey] = k
-
-        self.init_timings(files)
-        did_read_sasa = self.use_cached_sasa()
-        if not did_read_sasa:
-            self.init_universe()
-            self.calculate_sasa()
-            self.cache_sasa()
 
         logger.info(f"Got {len(self.times)} times for SASA calculation")
         for id_c, b in self.bonds.items():
@@ -508,7 +419,6 @@ class HydrolysisReaction(ReactionPlugin):
         self.times = []
         self.sasa_per_bond = {k: [] for k in self.bonds.keys()}
         sasa = MiniSasa(self.u)
-        not_found_ids = []
         # skip the first frame
         for frame in self.u.trajectory[1::self.nframes_stepsize]:
             time = round(frame.time, 3)
@@ -518,18 +428,15 @@ class HydrolysisReaction(ReactionPlugin):
             self.times.append(time)
             sasa.update_structure()
             sasa.calc()
-            not_found_ids = []
             for k in self.bonds.keys():
                 ix_cc = int(k) - 1
-                if ix_cc > sasa.n_atoms:
-                    not_found_ids.append(k)
-                    continue
                 s = sasa.per_atom(ix_cc)
-                self.sasa_per_bond[k].append(s)
-
-        if len(not_found_ids) > 0:
-            m = f"Could not find {len(not_found_ids)} bonds in the trajectory: {not_found_ids}"
-            logger.warning(m)
+                try:
+                    self.sasa_per_bond[k].append(s)
+                except IndexError:
+                    m = f"Indices of atoms for mdanalysis selection for sasa calculation do not match with the peptide bonds."
+                    logger.error(m)
+                    raise ValueError(m)
 
         # but retain the first time [0.0] because
         # because it will combine with the next time
@@ -538,7 +445,7 @@ class HydrolysisReaction(ReactionPlugin):
         self.timespans = self.times_to_timespans([0.0] + self.times)
 
     def cache_sasa(self):
-        write_sasa(
+        write_sasa_free(
             times=self.times,
             sasa_per_bond=self.sasa_per_bond,
             metadata={
@@ -559,7 +466,7 @@ class HydrolysisReaction(ReactionPlugin):
             logger.info(m)
             return False
 
-        result = read_sasa(self.sasafile)
+        result = read_sasa_free(self.sasafile)
         if result is None:
             m = f"Could not read sasafile {self.sasafile}. Not using cached SASA."
             logger.warning(m)
@@ -597,7 +504,7 @@ class HydrolysisReaction(ReactionPlugin):
         return True
 
 
-def write_sasa(
+def write_sasa_free(
     times: list[float],
     sasa_per_bond: dict[str, list[float]],
     metadata: dict[str, Any],
@@ -622,7 +529,7 @@ def write_sasa(
             for s in sasas:
                 f.write(f"{s}\n")
 
-def read_sasa(
+def read_sasa_free(
     path: str | Path
 ) -> None|tuple[dict, list[float], dict[str, list[float]]]:
     with open(path, "r") as f:
