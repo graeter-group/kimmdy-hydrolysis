@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import MDAnalysis as mda
-import numpy as np
-from kimmdy.parsing import read_distances_dat, read_plumed
+from kimmdy.parsing import read_distances_dat
 from kimmdy.plugins import ReactionPlugin
 from kimmdy.recipe import (Bind, Break, CustomTopMod, DeferredRecipeSteps,
                            Recipe, RecipeCollection, RecipeStep, Relax)
@@ -15,9 +14,9 @@ from kimmdy.topology.topology import Topology
 from kimmdy.topology.utils import get_residue_by_bonding
 
 from kimmdy_hydrolysis.minisasa import MiniSasa
-from kimmdy_hydrolysis.utils import (ds_to_forces, get_aproach_penalty,
-                                     get_peptide_bonds_from_top,
-                                     read_bond_lengths)
+from kimmdy_hydrolysis.utils import (bondstats_to_csv, get_aproach_penalty,
+                                     get_peptide_bonds_from_top, get_bondstats,
+                                     bondstats_from_csv, read_plumed_input)
 from kimmdy_hydrolysis.rates import (experimental_reaction_rate_per_s,
                                         theoretical_reaction_rate_per_s)
 
@@ -34,10 +33,9 @@ class HydrolysisReaction(ReactionPlugin):
         self.max_sasa = self.config.max_sasa
         self.ph_value = self.config.ph_value
         self.external_force = self.config.external_force
+        self.bondstats_at_0 = None
         if self.config.eq_bond_lengths != "":
-            self.eq_lengths = read_bond_lengths(self.config.eq_bond_lengths)
-        else:
-            self.eq_lengths = None
+            self.bondstats_at_0 = bondstats_from_csv(self.config.eq_bond_lengths)
 
         self.theoretical = self.config.theoretical_rates.use
         if self.theoretical:
@@ -57,8 +55,7 @@ class HydrolysisReaction(ReactionPlugin):
         # times are shared between all bonds
         self.times: list[float] = []
         self.timespans: list[tuple[float, float]]
-        self.bonds = get_peptide_bonds_from_top(self.runmng.top)
-        plumed = None
+        self.peptide_bonds = get_peptide_bonds_from_top(self.runmng.top)
 
         self.init_timings(files)
 
@@ -69,25 +66,20 @@ class HydrolysisReaction(ReactionPlugin):
             self.cache_sasa()
 
         if self.config.external_force == -1:
-            plumed_out = files.input["plumed_out"]
-            plumed_in = files.input["plumed"]
-            if plumed_out is None or plumed_in is None:
-                m = f"External force not specified but no plumed file found"
-                logger.error(m)
-                raise ValueError(m)
-            self.distances = read_distances_dat(path=plumed_out, stride=self.nframes_stepsize)
-            plumed = read_plumed(plumed_in)
+            did_read_bondstats = self.use_cached_bondstats()
+            if not did_read_bondstats:
+                plumed_out = files.input["plumed_out"]
+                plumed_in = files.input["plumed"]
+                if plumed_out is None or plumed_in is None:
+                    m = f"External force not specified but no plumed file found"
+                    logger.error(m)
+                    raise ValueError(m)
+                self.calculate_bondstats(plumed_in=plumed_in, plumed_out=plumed_out)
+                self.cache_bondstats()
 
-            self.bond_to_plumed_id = {}
-            for k, v in plumed["labeled_action"].items():
-                if v["keyword"] != "DISTANCE":
-                    continue
-                atoms = v["atoms"]
-                bondkey = tuple(sorted(atoms, key=int))
-                self.bond_to_plumed_id[bondkey] = k
 
         logger.info(f"Got {len(self.times)} times for SASA calculation")
-        for id_c, b in self.bonds.items():
+        for id_c, b in self.peptide_bonds.items():
             r = Recipe(
                 recipe_steps=DeferredRecipeSteps(
                     key=id_c, callback=self.get_steps_for_id_c_at_t
@@ -99,43 +91,41 @@ class HydrolysisReaction(ReactionPlugin):
 
         return RecipeCollection(self.recipes)
 
+    def use_cached_bondstats(self) -> bool:
+        if self.config.recompute_bondstats:
+            return False
+        if not Path(self.bondstatsfile).exists():
+            m = f"sasafile {self.bondstatsfile} does not exist. Not using cached SASA."
+            logger.info(m)
+            return False
+
+        self.bondstats = bondstats_from_csv(self.bondstatsfile)
+        return True
+
+    def calculate_bondstats(self, plumed_in: Path, plumed_out: Path) -> None:
+        distances = read_distances_dat(path=plumed_out, dt=self.ps_per_frame * self.step)
+        bond_to_plumed_id = read_plumed_input(plumed_in)
+        self.bondstats = get_bondstats(
+            top=self.runmng.top,
+            distances=distances,
+            peptide_bonds=self.peptide_bonds,
+            bond_to_plumed_id=bond_to_plumed_id,
+        )
+
+    def cache_bondstats(self) -> None:
+        bondstats_to_csv(self.bondstats, self.bondstatsfile)
+
     def sasas_to_rates(self, sasas: list[float], bond: Bond) -> list[float]:
         if self.external_force != -1:
             force = self.external_force
         else:
-            # calculate force on bond
-            ai = self.runmng.top.atoms[bond.ai]
-            aj = self.runmng.top.atoms[bond.aj]
-            id = self.bond_to_plumed_id.get((bond.ai, bond.aj))
-            if id is None:
-                raise ValueError(f"Could not find plumed id for bond {ai} {aj}")
+            # get force on bond
+            bondkey = (bond.ai, bond.aj)
+            force = self.bondstats[bondkey]["mean_f"]
+            if self.bondstats_at_0 is not None:
+                force_at_0 = self.bondstats_at_0[bondkey]["mean_f"]
+                force = force - force_at_0
 
-            bondtype = self.runmng.top.ff.bondtypes.get((ai.type, aj.type))
-            if bondtype is None:
-                bondtype = self.runmng.top.ff.bondtypes.get((aj.type, ai.type))
-            if bondtype is None:
-                raise ValueError("Could not find bondtype")
-            if bondtype.c0 is None or bondtype.c1 is None:
-                raise ValueError("Could not find bondtype")
-            b0 = float(bondtype.c0)
-            kb = float(bondtype.c1)
-
-            ds = np.asarray(self.distances[id])
-
-            if self.eq_lengths is not None:
-                observed_b0 = self.eq_lengths.get((bond.ai, bond.aj))
-                if observed_b0 is None:
-                    m = f"Could not find observed bond length in {self.config.eq_bond_lengths} using default b0"
-                    logger.warning(m)
-                    observed_b0 = b0
-            else:
-                observed_b0 = b0
-
-            d = np.mean(ds)
-            forces = ds_to_forces(
-                ds=np.array(d), dissociation_energy=500, b0=observed_b0, kb=kb
-            )
-            force = float(np.mean(forces))
             # set negative average forces to 0
             force = max(force, 0)
 
@@ -180,7 +170,7 @@ class HydrolysisReaction(ReactionPlugin):
 
         The bond is identified by the atom id of the C atom.
         """
-        b = self.bonds[key]
+        b = self.peptide_bonds[key]
         ix_cc = int(b.ai) - 1  # C
         ix_n = int(b.aj) - 1  # N
         ix_oc = ix_cc + 1  # O carbonyl
@@ -374,6 +364,7 @@ class HydrolysisReaction(ReactionPlugin):
             raise ValueError(m)
         logger.info(f"Using xtc {self.xtc.name} in {self.xtc.parent.name} for trajectory")
         self.sasafile = self.xtc.with_name('.kimmdy.sasa')
+        self.bondstatsfile = self.xtc.with_name('.kimmdy.bondstats')
 
         md_instance = self.xtc.stem
         timings = self.runmng.timeinfos.get(md_instance)
@@ -414,10 +405,10 @@ class HydrolysisReaction(ReactionPlugin):
         frame = self.u.trajectory[0]
 
     def calculate_sasa(self):
-        logger.info(f"Calculating SASA for {len(self.bonds)} bonds. Step={self.step}")
+        logger.info(f"Calculating SASA for {len(self.peptide_bonds)} bonds. Step={self.step}")
         logger.info(f"Universe has {len(self.u.trajectory)} frames")
         self.times = []
-        self.sasa_per_bond = {k: [] for k in self.bonds.keys()}
+        self.sasa_per_bond = {k: [] for k in self.peptide_bonds.keys()}
         sasa = MiniSasa(self.u)
         # skip the first frame
         for frame in self.u.trajectory[1::self.nframes_stepsize]:
@@ -428,7 +419,7 @@ class HydrolysisReaction(ReactionPlugin):
             self.times.append(time)
             sasa.update_structure()
             sasa.calc()
-            for k in self.bonds.keys():
+            for k in self.peptide_bonds.keys():
                 ix_cc = int(k) - 1
                 s = sasa.per_atom(ix_cc)
                 try:

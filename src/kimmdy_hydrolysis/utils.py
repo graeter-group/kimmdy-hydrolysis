@@ -2,6 +2,7 @@ import logging
 from math import degrees, sqrt
 
 from MDAnalysis.core.universe import Atom
+from kimmdy.parsing import read_plumed
 from kimmdy.topology.atomic import Bond
 from kimmdy.topology.topology import Topology
 import numpy as np
@@ -12,33 +13,83 @@ from pathlib import Path
 
 logger = logging.getLogger("kimmdy.hydrolysis.utils")
 
+BONDSTATS_COLUMNS = "ai,aj,mean_d,mean_f,delta_d,b0"
 
-def read_bond_lengths(path: str | Path) -> dict[tuple[str, str], float]:
-    lengths = {}
+def bondstats_to_csv(stats: dict, path: str|Path):
+    ls = []
+    ls.append(BONDSTATS_COLUMNS)
+    for k, s in stats.items():
+        ls.append(f"{k[0]},{k[1]},{s['mean_d']:.6f},{s['mean_f']:.6f},{s['delta_d']:.6f},{s['b0']:.6f}")
+
+    with open(path, "w") as f:
+        f.write("\n".join(ls))
+
+def bondstats_from_csv(path: str | Path) -> dict[tuple[str, str], dict]:
+    stats: dict[tuple[str, str], dict] = {}
     with open(path, "r") as f:
         next(f)
-        for l in f:
-            i, j, d = l.strip().split(",")
-            lengths[(i, j)] = float(d)
-    return lengths
+        for line in f:
+            line = line.strip()
+            ai, aj, mean_d, mean_f, delta_d, b0 = line.split(",")
+            stats[(ai, aj)] = {
+                "mean_d": float(mean_d),
+                "mean_f": float(mean_f),
+                "delta_d": float(delta_d),
+                "b0": float(b0),
+            }
+
+    return stats
+
+def get_bondstats(top: Topology, distances: dict[float, dict[str, float]], peptide_bonds: dict[str, Bond], bond_to_plumed_id: dict[tuple[str, str], str]) -> dict[tuple[str, str], dict]:
+    stats: dict[tuple[str, str], dict] = {}
+    for bond in peptide_bonds.values():
+        ai = top.atoms[bond.ai]
+        aj = top.atoms[bond.aj]
+        k = (bond.ai, bond.aj)
+        bondtype = top.ff.bondtypes.get((ai.type, aj.type))
+        plumed_id = bond_to_plumed_id.get((bond.ai, bond.aj))
+        if not bondtype or bondtype.c0 is None or bondtype.c1 is None:
+            raise ValueError("Could not find bondtype")
+        assert plumed_id is not None, f"bond {bond} not found in plumed input"
+        b0 = float(bondtype.c0)
+        kb = float(bondtype.c1)
+        dissociation_energy = 500
+        ds = np.asarray([values[plumed_id] for values in distances.values()])
+        beta = np.sqrt(kb / (2 * dissociation_energy))
+        d_inflection = (beta * b0 + np.log(2)) / beta
+        # if the bond is stretched beyond the inflection point,
+        # take the inflection point force because this force must have acted on the bond at some point
+        ds_mask = ds > d_inflection
+        ds[ds_mask] = d_inflection
+        dds = ds - b0
+        forces = (
+            2 * beta * dissociation_energy * np.exp(-beta * dds) * (1 - np.exp(-beta * dds))
+        ) * nN_per_kJ_per_mol_nm
+
+        mean_d = np.mean(ds)
+        mean_f = np.mean(forces)
+
+        stats[k] = {
+            "mean_d": mean_d,
+            "mean_f": mean_f,
+            "delta_d": mean_d - b0,
+            "b0": b0,
+        }
+    return stats
 
 
-def ds_to_forces(
-    ds: np.ndarray, dissociation_energy: float, b0: float, kb: float
-) -> np.ndarray:
-    beta = np.sqrt(kb / (2 * dissociation_energy))
-    d_inflection = (beta * b0 + np.log(2)) / beta
-    # if the bond is stretched beyond the inflection point,
-    # take the inflection point force because this force must have acted on the bond at some point
-    ds_mask = ds > d_inflection
-    ds[ds_mask] = d_inflection
-    dds = ds - b0
-
-    # kJ/mol/nm -> nN
-    forces = (
-        2 * beta * dissociation_energy * np.exp(-beta * dds) * (1 - np.exp(-beta * dds))
-    ) * nN_per_kJ_per_mol_nm
-    return forces
+def read_plumed_input(path: str | Path) -> dict[tuple[str, str], str]:
+    if not isinstance(path, Path):
+        path = Path(path)
+    plumed = read_plumed(path)
+    d = {}
+    for k, v in plumed["labeled_action"].items():
+        if v["keyword"] != "DISTANCE":
+            continue
+        atoms = v["atoms"]
+        bondkey = tuple(sorted(atoms, key=int))
+        d[bondkey] = k
+    return d
 
 
 def get_peptide_bonds_from_top(top: Topology) -> dict[str, Bond]:
