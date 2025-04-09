@@ -41,6 +41,13 @@
       "default": 1,
       "minimum": 1
     },
+    "dt_distances": {
+      "type": "number",
+      "description": "Stepsize in ps for reading distances from the plumed distances.dat file. 0 Means use every frame in the file.",
+      "pytype": "float",
+      "default": 0,
+      "minimum": 0
+    },
     "kmc": {
       "description": "KMC algorithm for this reaction.",
       "type": "string",
@@ -74,9 +81,9 @@
       "pytype": "float",
       "default": -1
     },
-    "eq_bond_lengths": {
+    "bondstats_at_0": {
       "type": "string",
-      "description": "CSV file of equilibirum bond lengths for each peptide bond in the system. Colums: i,j,bond_length. The default is the empty string, in which case no equilibirum length correction is applied.",
+      "description": "CSV file of equilibirum bond distances and forces for each peptide bond in the system. The default is the empty string, in which case no equilibirum length correction is applied.",
       "pytype": "str",
       "default": ""
     },

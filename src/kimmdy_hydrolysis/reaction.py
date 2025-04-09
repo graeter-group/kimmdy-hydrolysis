@@ -27,18 +27,18 @@ class HydrolysisReaction(ReactionPlugin):
 
     def get_recipe_collection(self, files: TaskFiles) -> RecipeCollection:
         logger = files.logger
-        logger.debug(f"Calling hydrolysis reaction with config: {self.config}")
 
         # settings from the config
         self.max_sasa = self.config.max_sasa
         self.ph_value = self.config.ph_value
         self.external_force = self.config.external_force
         self.bondstats_at_0 = None
-        if self.config.eq_bond_lengths != "":
-            self.bondstats_at_0 = bondstats_from_csv(self.config.eq_bond_lengths)
+        if self.config.bondstats_at_0 != "":
+            self.bondstats_at_0 = bondstats_from_csv(self.config.bondstats_at_0)
 
         self.theoretical = self.config.theoretical_rates.use
         if self.theoretical:
+            logger.info(f"Using theoretical rates")
             self.A = (
                 self.config.theoretical_rates.empirical_attempt_frequency * 1e12
             )  # A from 1/ps to 1/s
@@ -74,6 +74,9 @@ class HydrolysisReaction(ReactionPlugin):
                     m = f"External force not specified but no plumed file found"
                     logger.error(m)
                     raise ValueError(m)
+                # FIXME: this
+                # rename eq dist config in templates
+                print(f"Using plumed_out {plumed_out} and plumed_in {plumed_in}")
                 self.calculate_bondstats(plumed_in=plumed_in, plumed_out=plumed_out)
                 self.cache_bondstats()
 
@@ -103,7 +106,7 @@ class HydrolysisReaction(ReactionPlugin):
         return True
 
     def calculate_bondstats(self, plumed_in: Path, plumed_out: Path) -> None:
-        distances = read_distances_dat(path=plumed_out, dt=self.ps_per_frame * self.step)
+        distances = read_distances_dat(path=plumed_out, dt=self.config.dt_distances)
         bond_to_plumed_id = read_plumed_input(plumed_in)
         self.bondstats = get_bondstats(
             top=self.runmng.top,
@@ -123,6 +126,7 @@ class HydrolysisReaction(ReactionPlugin):
             bondkey = (bond.ai, bond.aj)
             force = self.bondstats[bondkey]["mean_f"]
             if self.bondstats_at_0 is not None:
+                # subtract the force at 0
                 force_at_0 = self.bondstats_at_0[bondkey]["mean_f"]
                 force = force - force_at_0
 
@@ -133,7 +137,6 @@ class HydrolysisReaction(ReactionPlugin):
             f"Calculating rates for bond {bond.ai} {bond.aj} with force {force}"
         )
         if self.theoretical:
-            logger.info(f"Using theoretical rates")
             k_hyd_per_s = theoretical_reaction_rate_per_s(
                 force=force,
                 A=self.A,
