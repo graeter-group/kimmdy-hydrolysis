@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import MDAnalysis as mda
-from kimmdy.parsing import read_distances_dat
 from kimmdy.plugins import ReactionPlugin
 from kimmdy.recipe import (Bind, Break, CustomTopMod, DeferredRecipeSteps,
                            Recipe, RecipeCollection, RecipeStep, Relax)
@@ -14,9 +13,8 @@ from kimmdy.topology.topology import Topology
 from kimmdy.topology.utils import get_residue_by_bonding
 
 from kimmdy_hydrolysis.minisasa import MiniSasa
-from kimmdy_hydrolysis.utils import (bondstats_to_csv, get_aproach_penalty,
-                                     get_peptide_bonds_from_top, get_bondstats,
-                                     bondstats_from_csv, read_plumed_input)
+from kimmdy_hydrolysis.utils import get_aproach_penalty, get_peptide_bonds_from_top
+from kimmdy.plugin_utils import bondstats_to_csv, bondstats_from_csv, calculate_bondstats
 from kimmdy_hydrolysis.rates import (experimental_reaction_rate_per_s,
                                         theoretical_reaction_rate_per_s)
 
@@ -74,12 +72,8 @@ class HydrolysisReaction(ReactionPlugin):
                     m = f"External force not specified but no plumed file found"
                     logger.error(m)
                     raise ValueError(m)
-                # FIXME: this
-                # rename eq dist config in templates
-                print(f"Using plumed_out {plumed_out} and plumed_in {plumed_in}")
-                self.calculate_bondstats(plumed_in=plumed_in, plumed_out=plumed_out)
+                self.bondstats = calculate_bondstats(top=self.runmng.top, plumed_in=plumed_in, plumed_out=plumed_out, dt=self.config.dt_distances, edissoc_dat=files.input["edissoc.dat"])
                 self.cache_bondstats()
-
 
         logger.info(f"Got {len(self.times)} times for SASA calculation")
         for id_c, b in self.peptide_bonds.items():
@@ -98,22 +92,12 @@ class HydrolysisReaction(ReactionPlugin):
         if self.config.recompute_bondstats:
             return False
         if not Path(self.bondstatsfile).exists():
-            m = f"sasafile {self.bondstatsfile} does not exist. Not using cached SASA."
+            m = f"bondstatsfile {self.bondstatsfile} does not exist. Not using cached bondstats."
             logger.info(m)
             return False
 
         self.bondstats = bondstats_from_csv(self.bondstatsfile)
         return True
-
-    def calculate_bondstats(self, plumed_in: Path, plumed_out: Path) -> None:
-        distances = read_distances_dat(path=plumed_out, dt=self.config.dt_distances)
-        bond_to_plumed_id = read_plumed_input(plumed_in)
-        self.bondstats = get_bondstats(
-            top=self.runmng.top,
-            distances=distances,
-            peptide_bonds=self.peptide_bonds,
-            bond_to_plumed_id=bond_to_plumed_id,
-        )
 
     def cache_bondstats(self) -> None:
         bondstats_to_csv(self.bondstats, self.bondstatsfile)
