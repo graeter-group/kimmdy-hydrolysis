@@ -5,6 +5,7 @@ from typing import Any
 
 import MDAnalysis as mda
 from kimmdy.plugins import ReactionPlugin
+from kimmdy.constants import nN_per_kJ_per_mol_nm
 from kimmdy.recipe import (Bind, Break, CustomTopMod, DeferredRecipeSteps,
                            Recipe, RecipeCollection, RecipeStep, Relax)
 from kimmdy.tasks import TaskFiles
@@ -92,7 +93,7 @@ class HydrolysisReaction(ReactionPlugin):
         if self.config.recompute_bondstats:
             return False
         if not Path(self.bondstatsfile).exists():
-            m = f"bondstatsfile {self.bondstatsfile} does not exist. Not using cached bondstats."
+            m = f"bondstatsfile does not exist. Not using cached bondstats."
             logger.info(m)
             return False
 
@@ -113,6 +114,9 @@ class HydrolysisReaction(ReactionPlugin):
                 # subtract the force at 0
                 force_at_0 = self.bondstats_at_0[bondkey]["mean_f"]
                 force = force - force_at_0
+
+            # force from bondstats is in gromacs units
+            force = force * nN_per_kJ_per_mol_nm
 
             # set negative average forces to 0
             force = max(force, 0)
@@ -476,7 +480,7 @@ class HydrolysisReaction(ReactionPlugin):
         self.sasa_per_bond = sasa_per_bond
         self.timespans = self.times_to_timespans([0.0] + self.times)
 
-        m = f"Using cached SASA from {self.sasafile}"
+        m = f"Using cached SASA"
         logger.info(m)
 
         return True
