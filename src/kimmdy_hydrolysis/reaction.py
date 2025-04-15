@@ -57,10 +57,10 @@ class HydrolysisReaction(ReactionPlugin):
         self.peptide_bonds = get_peptide_bonds_from_top(self.runmng.top)
 
         self.init_timings(files)
+        self.init_universe()
 
         did_read_sasa = self.use_cached_sasa()
         if not did_read_sasa:
-            self.init_universe()
             self.calculate_sasa()
             self.cache_sasa()
 
@@ -197,7 +197,7 @@ class HydrolysisReaction(ReactionPlugin):
         logger.info(f"Time of u.trajectory: {snapshot.time:.3f} ps")
 
         if round(self.u.trajectory.time, 3) != round(ttime, 3):
-            m = f"Mismatch between time chosen by the runmanager and index received"
+            m = f"Mismatch between time chosen by the runmanager and time received"
             logger.error(m)
             raise ValueError(m)
 

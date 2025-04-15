@@ -88,6 +88,11 @@ df['plugin_log_k'] = np.log(df['plugin_k'])
 df.head()
 ```
 
+
+```{python}
+df
+```
+
 Fit model log(k) ~ t + f:
 
 ```{python}
@@ -152,17 +157,28 @@ p.show()
 
 
 ```{python}
+df.columns
+```
+
+
+```{python}
+df.rate / df.plugin_theo_k
+```
+
+```{python}
 p = (
-  ggplot(df, aes(x='t', y='log_k', color='factor(f)')) +
+  ggplot(df, aes(x='f', y='rate', color='factor(t)')) +
   # geom_smooth(method='lm', se=False) +
-  geom_point(size=5) +
-  geom_point(aes(y='plugin_log_k'), size=5, shape='x') +
+  geom_point(size=5, color='blue') +
+  # geom_point(aes(y='plugin_log_k'), size=5, shape='x') +
+  geom_point(aes(y='plugin_theo_k'), size=5, shape='.', color='black') +
   scale_x_reverse() +
+  scale_y_log10() +
   guides(color=guide_legend(reverse=True)) +
   labs(
     y='log(k) [1/s]',
-    x='Temperature [K]',
-    color='Force [nN]'
+    x='Force [nN]',
+    color='Temperature [K]'
   )
 )
 p.show()
