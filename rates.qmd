@@ -54,7 +54,7 @@ from plotnine import * # pyright: ignore
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from kimmdy_hydrolysis.reaction import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate
+from kimmdy_hydrolysis.rates import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate
 import pandas as pd
 import os
 
