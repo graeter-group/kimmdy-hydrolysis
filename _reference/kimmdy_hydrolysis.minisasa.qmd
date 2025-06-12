@@ -15,7 +15,12 @@ rebuild the strucuture every time.
 
 ### MiniSasa { #kimmdy_hydrolysis.minisasa.MiniSasa }
 
-`minisasa.MiniSasa(self, u, mda_selection='not resname SOL and not resname CL and not resname NA')`
+```python
+minisasa.MiniSasa(
+    u,
+    mda_selection='not resname SOL and not resname CL and not resname NA',
+)
+```
 
 A class to calculate SASA for a given MDAnalysis Universe.
 This class allows for the calculation of SASA for multiple atoms in a single structure
@@ -30,7 +35,9 @@ It uses the FreeSASA library for the calculations.
 
 ##### update_structure { #kimmdy_hydrolysis.minisasa.MiniSasa.update_structure }
 
-`minisasa.MiniSasa.update_structure()`
+```python
+minisasa.MiniSasa.update_structure()
+```
 
 FreeSasa structure accepts PDBS if not available requires to reconstruct the structure using `addAtom`
 
@@ -42,6 +49,8 @@ FreeSasa structure accepts PDBS if not available requires to reconstruct the str
 
 ### get_baseline_sasa { #kimmdy_hydrolysis.minisasa.get_baseline_sasa }
 
-`minisasa.get_baseline_sasa()`
+```python
+minisasa.get_baseline_sasa()
+```
 
 Calculate the SASA of a C in the peptide bond of a capped GLY-GLY didpeptide

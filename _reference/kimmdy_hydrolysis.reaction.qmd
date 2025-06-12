@@ -12,7 +12,9 @@
 
 ### HydrolysisReaction { #kimmdy_hydrolysis.reaction.HydrolysisReaction }
 
-`reaction.HydrolysisReaction()`
+```python
+reaction.HydrolysisReaction()
+```
 
 Hydrolyses peptide bonds of the backbone.
 
@@ -25,7 +27,9 @@ Hydrolyses peptide bonds of the backbone.
 
 ##### get_steps_for_id_c_at_t { #kimmdy_hydrolysis.reaction.HydrolysisReaction.get_steps_for_id_c_at_t }
 
-`reaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)`
+```python
+reaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)
+```
 
 Get the steps for a given bond at a given time.
 
@@ -33,7 +37,9 @@ The bond is identified by the atom id of the C atom.
 
 ##### times_to_timespans { #kimmdy_hydrolysis.reaction.HydrolysisReaction.times_to_timespans }
 
-`reaction.HydrolysisReaction.times_to_timespans(times)`
+```python
+reaction.HydrolysisReaction.times_to_timespans(times)
+```
 
 Transforms an array of times into a list of time intervals
 times are an array of times at which the SASA was calculated
