@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.0...v0.2.1) (2025-06-12)
+
+
+### Documentation
+
+* change readme to test ci ([935dc35](https://github.com/graeter-group/kimmdy-hydrolysis/commit/935dc3539ac86ebaecdbdf7655e7bb8fbac64799))
+
 ## [0.2.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.1.0...v0.2.0) (2025-06-12)
 
 
