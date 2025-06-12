@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0 (2025-06-12)
+
+
+### Features
+
+* v1 ([6fd40db](https://github.com/graeter-group/kimmdy-hydrolysis/commit/6fd40dbc87e4bfdc5a82a64d9681fb5884d91c90))
+
 ## 0.1.0 (2025-03-12)
 
 
