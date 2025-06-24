@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.1...v0.2.2) (2025-06-24)
+
+
+### Bug Fixes
+
+* fix version number ([9013dd8](https://github.com/graeter-group/kimmdy-hydrolysis/commit/9013dd847d10c63f9022d7f42b58a170d8ef7be6))
+
 ## [0.2.1](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.0...v0.2.1) (2025-06-12)
 
 
