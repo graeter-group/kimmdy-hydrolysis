@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.2...v0.2.3) (2025-08-07)
+
+
+### Bug Fixes
+
+* conflicting license statements ([#9](https://github.com/graeter-group/kimmdy-hydrolysis/issues/9)) ([053558f](https://github.com/graeter-group/kimmdy-hydrolysis/commit/053558f54868c3f3da2d67f7d094f9c96a5eeab6))
+* error of integer of float division gives wrong frame ([#11](https://github.com/graeter-group/kimmdy-hydrolysis/issues/11)) ([c68f99b](https://github.com/graeter-group/kimmdy-hydrolysis/commit/c68f99b3e085b9f5e4455cc8e9c75a280755265f))
+
 ## [0.2.2](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.1...v0.2.2) (2025-06-24)
 
 
