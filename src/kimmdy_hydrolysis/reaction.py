@@ -208,7 +208,7 @@ class HydrolysisReaction(ReactionPlugin):
             f"Hydrolyzing bond between C with ix {ix_cc} and N with ix {ix_n} at time {ttime} ps"
         )
 
-        frame = int(ttime / self.ps_per_frame)
+        frame = round(ttime / self.ps_per_frame)
         snapshot = self.u.trajectory[frame]
 
         logger.info(
