@@ -2,38 +2,38 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>http://graeter-group.github.io/kimmdy-hydrolysis/rates.html</loc>
-    <lastmod>2025-06-24T13:30:55.893Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.constants.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.minisasa.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.rates.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/index.html</loc>
-    <lastmod>2025-06-24T13:30:55.893Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.reaction.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
-  </url>
-  <url>
-    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/index.html</loc>
-    <lastmod>2025-06-24T13:32:04.048Z</lastmod>
+    <lastmod>2025-08-07T19:25:44.928Z</lastmod>
   </url>
   <url>
     <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.utils.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.rates.html</loc>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/index.html</loc>
+    <lastmod>2025-08-07T19:26:56.451Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/index.html</loc>
+    <lastmod>2025-08-07T19:25:44.927Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.minisasa.html</loc>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.constants.html</loc>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
+  </url>
+  <url>
+    <loc>http://graeter-group.github.io/kimmdy-hydrolysis/_reference/kimmdy_hydrolysis.reaction.html</loc>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
   </url>
   <url>
     <loc>http://graeter-group.github.io/kimmdy-hydrolysis/config.html</loc>
-    <lastmod>2025-06-24T13:30:55.885Z</lastmod>
+    <lastmod>2025-08-07T19:25:44.920Z</lastmod>
   </url>
 </urlset>
