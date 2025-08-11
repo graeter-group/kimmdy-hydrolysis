@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.3...v0.3.0) (2025-08-11)
+
+
+### Features
+
+* trigger release with pyproject.toml ([28648be](https://github.com/graeter-group/kimmdy-hydrolysis/commit/28648be408f3b6aaaf71ba7990325ad42075293e))
+
 ## [0.2.3](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.2...v0.2.3) (2025-08-07)
 
 
