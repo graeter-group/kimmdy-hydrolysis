@@ -7,16 +7,69 @@
     "text": "KIMMDY can be used to sample competing reactions as long as proxies for comparable reaction rates are known. Let us consider the following two reactions that can occur in the backbone of a protein:\n\nHomolysis of a bond\nHydrolysis of a bond\n\nThe KIMMDY-plugin version of earlier work on collagen bond rupture by Rennekamp et al. (2020) shipped with KIMMDY in the optional kimmdy-reactons package can be used to simulate force-dependent bond rupture reactions.\n\\[\nk=A e^{-\\Delta E / k_B T}\n\\tag{1}\\]\nRennekamp et al. (2020) ultimately used an empirical attempt frequency of \\(A=0.23 ps^{-1}\\) (after starting with the theoretical maximal attempt frequency of \\(A=6.25 ps^{-1}\\)).\nFor hydrolysis, we take a a baseline energy barrier scaled by the force-dependence of the reaction unveiled by Pill et al. (2019). The observed attempt frequency of the hydrolysis reaction is further scaled by the solvent accessible surface area (SASA) of the peptide bond, normalized to the maximum SASA of a peptide bond in a lonely glycine-glycine dipeptide (\\(=140 A^2\\)).\nPill et al. (2019) suggest that the rate of the hydrolysis reaction is govered by two enegy barriers, where T1 is almost insensitive to mechanical activation, but only becomes rate-determining after the mechanically sensitive T2 is lowered by force.\nTS1:\n\n80 kJ/mol at 0nN\n77 kJ/mol at 1.8nN\nE = 80 - 1.67 * F\n\nTS2:\n\n92.5 kJ/mol at 0nN\n46 kJ/mol at 1.8 nN\nE = 92.5 - 25.83 * F\n\nThis translates to:\ncritical_force = 0.7 # nN\nif force &lt; critical_force\n  # low force regime, TS2 is rate-determining\n  E_barrier = 92.5 - 25.83 * force\nelse:\n  # high force regime, TS1 is rate-determining\n  E_barrier = 80 - 1.67 * force\nBut the theortical rates don’t quite match the experimental rates.\n\nfrom plotnine import * # pyright: ignore\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport numpy as np\nfrom kimmdy_hydrolysis.rates import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate\nimport pandas as pd\nimport os\n\nroot = os.getcwd()\n\ntheme_set(theme_minimal())\n\n&lt;plotnine.themes.theme_minimal.theme_minimal at 0x7782a2d13310&gt;\n\n\nInstead of calculating rates from the theoretical energies we can fit the rates to the experimental data directly.\nGet the data from the SI and add predicted rates from hydrolysis plugin function:\n\ndf = pd.read_csv(\"./assets/afm-rates.csv\")\ndf = df.melt(id_vars=[\"f\"], var_name=\"t\", value_name=\"rate\")\ndf[\"t\"] = pd.to_numeric(df[\"t\"], errors=\"coerce\")\ndf = df.dropna(subset=[\"rate\"])\ndf[\"log_k\"] = np.log(df[\"rate\"])\ndf[\"is_low_f\"] = df[\"f\"] &lt;= 0.7\ndf['plugin_k'] = [experimental_reaction_rate_per_s(force=f, temperature=t) for f, t in zip(df[\"f\"], df[\"t\"])]\ndf['plugin_theo_k'] = [theoretical_reaction_rate_per_s(force=f, temperature=t) for f, t in zip(df[\"f\"], df[\"t\"])]\ndf['plugin_high_log_k'] = [high_force_log_rate(force=f, temperature=t) for f, t in zip(df[\"f\"], df[\"t\"])]\ndf['plugin_low_log_k'] = [low_force_log_rate(force=f) for f, t in zip(df[\"f\"], df[\"t\"])]\ndf['plugin_log_k'] = np.log(df['plugin_k'])\n\nFit model log(k) ~ t + f:\n\nimport statsmodels.api as sm\n\nmodel = sm.OLS.from_formula(\"log_k ~ t + f\", data=df.query(\"not is_low_f\"))\nmodel.fit().summary()\n\n\nOLS Regression Results\n\n\nDep. Variable:\nlog_k\nR-squared:\n0.944\n\n\nModel:\nOLS\nAdj. R-squared:\n0.939\n\n\nMethod:\nLeast Squares\nF-statistic:\n187.0\n\n\nDate:\nThu, 12 Jun 2025\nProb (F-statistic):\n1.56e-14\n\n\nTime:\n14:32:26\nLog-Likelihood:\n14.858\n\n\nNo. Observations:\n25\nAIC:\n-23.72\n\n\nDf Residuals:\n22\nBIC:\n-20.06\n\n\nDf Model:\n2\n\n\n\n\nCovariance Type:\nnonrobust\n\n\n\n\n\n\n\n\n\n\n\ncoef\nstd err\nt\nP&gt;|t|\n[0.025\n0.975]\n\n\nIntercept\n-20.3430\n1.946\n-10.453\n0.000\n-24.379\n-16.307\n\n\nt\n0.0706\n0.006\n10.940\n0.000\n0.057\n0.084\n\n\nf\n1.6052\n0.101\n15.946\n0.000\n1.396\n1.814\n\n\n\n\n\n\n\n\nOmnibus:\n3.044\nDurbin-Watson:\n2.069\n\n\nProb(Omnibus):\n0.218\nJarque-Bera (JB):\n2.094\n\n\nSkew:\n0.523\nProb(JB):\n0.351\n\n\nKurtosis:\n2.044\nCond. No.\n2.06e+04\n\n\n\nNotes:[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.[2] The condition number is large, 2.06e+04. This might indicate that there arestrong multicollinearity or other numerical problems.\n\n\n\nmodel_294k = sm.OLS.from_formula(\"log_k ~ f\", data=df.query(\"not is_low_f & t == 294.15\"))\nmodel_294k.fit().summary()\n\n\nOLS Regression Results\n\n\nDep. Variable:\nlog_k\nR-squared:\n0.981\n\n\nModel:\nOLS\nAdj. R-squared:\n0.975\n\n\nMethod:\nLeast Squares\nF-statistic:\n159.0\n\n\nDate:\nThu, 12 Jun 2025\nProb (F-statistic):\n0.00108\n\n\nTime:\n14:32:26\nLog-Likelihood:\n6.8454\n\n\nNo. Observations:\n5\nAIC:\n-9.691\n\n\nDf Residuals:\n3\nBIC:\n-10.47\n\n\nDf Model:\n1\n\n\n\n\nCovariance Type:\nnonrobust\n\n\n\n\n\n\n\n\n\n\n\ncoef\nstd err\nt\nP&gt;|t|\n[0.025\n0.975]\n\n\nIntercept\n0.4216\n0.155\n2.722\n0.072\n-0.071\n0.914\n\n\nf\n1.5839\n0.126\n12.608\n0.001\n1.184\n1.984\n\n\n\n\n\n\n\n\nOmnibus:\nnan\nDurbin-Watson:\n2.105\n\n\nProb(Omnibus):\nnan\nJarque-Bera (JB):\n0.617\n\n\nSkew:\n0.204\nProb(JB):\n0.734\n\n\nKurtosis:\n1.328\nCond. No.\n8.80\n\n\n\nNotes:[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.\n\n\nadd model predictions:\n\ndf['model_high_log_k'] = model.fit().predict(df.query(\"not is_low_f\"))\ndf['model_294k_log_k'] = model_294k.fit().predict(df.query(\"not is_low_f & t == 294.15\"))\n\nArrhenius plot:\n\np = (\n  ggplot(df.query('not is_low_f'), aes(x='t', y='log_k', color='factor(f)')) +\n  geom_smooth(method='lm', se=False) +\n  geom_point(size=5) +\n  geom_point(aes(y='plugin_high_log_k'), size=5, shape='x') +\n  geom_point(aes(y='model_high_log_k'), size=5, shape='.') +\n  geom_point(aes(y='model_294k_log_k'), size=5, shape='.', color='red') +\n  scale_x_reverse() +\n  guides(color=guide_legend(reverse=True)) +\n  labs(\n    y='log(k) [1/s]',\n    x='Temperature [K]',\n    color='Force [nN]'\n  )\n)\np.show()\n\n\n\n\n\n\n\n\n\np = (\n  ggplot(df.query('not is_low_f & t == 294.15'), aes(x='f', y='log_k')) +\n  geom_smooth(method='lm', se=False) +\n  geom_point(size=5) +\n  geom_point(aes(y='plugin_high_log_k'), size=5, shape='x') +\n  geom_point(aes(y='model_high_log_k'), size=5, shape='.') +\n  geom_point(aes(y='model_294k_log_k'), size=5, shape='.', color='red') +\n  scale_x_reverse() +\n  guides(color=guide_legend(reverse=True)) +\n  labs(\n    x='Force [nN]',\n    y='log(k) [1/s]',\n  )\n)\np.show()\n\n\n\n\n\n\n\n\n\np = (\n  ggplot(df, aes(x='f', y='rate', color='factor(t)')) +\n  # geom_smooth(method='lm', se=False) +\n  geom_point(size=5, color='blue') +\n  # geom_point(aes(y='plugin_log_k'), size=5, shape='x') +\n  geom_point(aes(y='plugin_theo_k'), size=5, shape='.', color='black') +\n  scale_x_reverse() +\n  scale_y_log10() +\n  guides(color=guide_legend(reverse=True)) +\n  labs(\n    y='log(k) [1/s]',\n    x='Force [nN]',\n    color='Temperature [K]'\n  )\n)\np.show()\n\n\n\n\n\n\n\n\n\n\n\n\n Back to topReferences\n\nPill, Michael F., Allan L. L. East, Dominik Marx, Martin K. Beyer, and Hauke Clausen-Schaumann. 2019. “Mechanical Activation Drastically Accelerates Amide Bond Hydrolysis, Matching Enzyme Activity.” https://doi.org/10.1002/anie.201902752.\n\n\nRennekamp, Benedikt, Fabian Kutzki, Agnieszka Obarska-Kosinska, Christopher Zapp, and Frauke Gräter. 2020. “Hybrid Kinetic Monte Carlo/Molecular Dynamics Simulations of Bond Scissions in Proteins.” https://doi.org/10.1021/acs.jctc.9b00786."
   },
   {
-    "objectID": "_reference/kimmdy_hydrolysis.utils.html",
-    "href": "_reference/kimmdy_hydrolysis.utils.html",
-    "title": "kimmdy_hydrolysis.utils",
+    "objectID": "_reference/kimmdy_hydrolysis.reaction.html",
+    "href": "_reference/kimmdy_hydrolysis.reaction.html",
+    "title": "kimmdy_hydrolysis.reaction",
     "section": "",
-    "text": "kimmdy_hydrolysis.utils\nutils\n\n\n\n\n Back to top",
+    "text": "reaction\n\n\n\n\n\nName\nDescription\n\n\n\n\nHydrolysisReaction\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nreaction.HydrolysisReaction()\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nName\nDescription\n\n\n\n\nget_steps_for_id_c_at_t\nGet the steps for a given bond at a given time.\n\n\ntimes_to_timespans\nTransforms an array of times into a list of time intervals\n\n\n\n\n\nreaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)\nGet the steps for a given bond at a given time.\nThe bond is identified by the atom id of the C atom.\n\n\n\nreaction.HydrolysisReaction.times_to_timespans(times)\nTransforms an array of times into a list of time intervals times are an array of times at which the SASA was calculated timespans are the time intervals between those times as tuples of (start, end)",
     "crumbs": [
       "Reference",
       "Hydrolysis",
-      "kimmdy_hydrolysis.utils"
+      "kimmdy_hydrolysis.reaction"
     ]
+  },
+  {
+    "objectID": "_reference/kimmdy_hydrolysis.reaction.html#classes",
+    "href": "_reference/kimmdy_hydrolysis.reaction.html#classes",
+    "title": "kimmdy_hydrolysis.reaction",
+    "section": "",
+    "text": "Name\nDescription\n\n\n\n\nHydrolysisReaction\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nreaction.HydrolysisReaction()\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nName\nDescription\n\n\n\n\nget_steps_for_id_c_at_t\nGet the steps for a given bond at a given time.\n\n\ntimes_to_timespans\nTransforms an array of times into a list of time intervals\n\n\n\n\n\nreaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)\nGet the steps for a given bond at a given time.\nThe bond is identified by the atom id of the C atom.\n\n\n\nreaction.HydrolysisReaction.times_to_timespans(times)\nTransforms an array of times into a list of time intervals times are an array of times at which the SASA was calculated timespans are the time intervals between those times as tuples of (start, end)",
+    "crumbs": [
+      "Reference",
+      "Hydrolysis",
+      "kimmdy_hydrolysis.reaction"
+    ]
+  },
+  {
+    "objectID": "_reference/index.html",
+    "href": "_reference/index.html",
+    "title": "References",
+    "section": "",
+    "text": "kimmdy_hydrolysis.reaction\n\n\n\nkimmdy_hydrolysis.rates\n\n\n\nkimmdy_hydrolysis.minisasa\nInspired by SASAAnalysis: https://github.com/pegerto/mdakit_sasa\n\n\nkimmdy_hydrolysis.utils\n\n\n\nkimmdy_hydrolysis.constants",
+    "crumbs": [
+      "Reference",
+      "References"
+    ]
+  },
+  {
+    "objectID": "_reference/index.html#hydrolysis",
+    "href": "_reference/index.html#hydrolysis",
+    "title": "References",
+    "section": "",
+    "text": "kimmdy_hydrolysis.reaction\n\n\n\nkimmdy_hydrolysis.rates\n\n\n\nkimmdy_hydrolysis.minisasa\nInspired by SASAAnalysis: https://github.com/pegerto/mdakit_sasa\n\n\nkimmdy_hydrolysis.utils\n\n\n\nkimmdy_hydrolysis.constants",
+    "crumbs": [
+      "Reference",
+      "References"
+    ]
+  },
+  {
+    "objectID": "_reference/kimmdy_hydrolysis.constants.html",
+    "href": "_reference/kimmdy_hydrolysis.constants.html",
+    "title": "kimmdy_hydrolysis.constants",
+    "section": "",
+    "text": "kimmdy_hydrolysis.constants\nconstants\n\n\n\n\n Back to top",
+    "crumbs": [
+      "Reference",
+      "Hydrolysis",
+      "kimmdy_hydrolysis.constants"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "kimmdy-hydrolysis",
+    "section": "",
+    "text": "kimmdy-hydrolysis\nA reaction plugin for KIMMDY that hydrolyses peptide bonds.\nDocumentation: https://graeter-group.github.io/kimmdy-hydrolysis/\n\n\n\n\n Back to top"
   },
   {
     "objectID": "_reference/kimmdy_hydrolysis.rates.html",
@@ -43,33 +96,16 @@
     ]
   },
   {
-    "objectID": "_reference/index.html",
-    "href": "_reference/index.html",
-    "title": "References",
+    "objectID": "_reference/kimmdy_hydrolysis.utils.html",
+    "href": "_reference/kimmdy_hydrolysis.utils.html",
+    "title": "kimmdy_hydrolysis.utils",
     "section": "",
-    "text": "kimmdy_hydrolysis.reaction\n\n\n\nkimmdy_hydrolysis.rates\n\n\n\nkimmdy_hydrolysis.minisasa\nInspired by SASAAnalysis: https://github.com/pegerto/mdakit_sasa\n\n\nkimmdy_hydrolysis.utils\n\n\n\nkimmdy_hydrolysis.constants",
+    "text": "kimmdy_hydrolysis.utils\nutils\n\n\n\n\n Back to top",
     "crumbs": [
       "Reference",
-      "References"
+      "Hydrolysis",
+      "kimmdy_hydrolysis.utils"
     ]
-  },
-  {
-    "objectID": "_reference/index.html#hydrolysis",
-    "href": "_reference/index.html#hydrolysis",
-    "title": "References",
-    "section": "",
-    "text": "kimmdy_hydrolysis.reaction\n\n\n\nkimmdy_hydrolysis.rates\n\n\n\nkimmdy_hydrolysis.minisasa\nInspired by SASAAnalysis: https://github.com/pegerto/mdakit_sasa\n\n\nkimmdy_hydrolysis.utils\n\n\n\nkimmdy_hydrolysis.constants",
-    "crumbs": [
-      "Reference",
-      "References"
-    ]
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "kimmdy-hydrolysis",
-    "section": "",
-    "text": "kimmdy-hydrolysis\nA reaction plugin for KIMMDY that hydrolyses peptide bonds.\nDocumentation: https://graeter-group.github.io/kimmdy-hydrolysis/\n\n\n\n\n Back to top"
   },
   {
     "objectID": "_reference/kimmdy_hydrolysis.minisasa.html",
@@ -105,42 +141,6 @@
       "Reference",
       "Hydrolysis",
       "kimmdy_hydrolysis.minisasa"
-    ]
-  },
-  {
-    "objectID": "_reference/kimmdy_hydrolysis.constants.html",
-    "href": "_reference/kimmdy_hydrolysis.constants.html",
-    "title": "kimmdy_hydrolysis.constants",
-    "section": "",
-    "text": "kimmdy_hydrolysis.constants\nconstants\n\n\n\n\n Back to top",
-    "crumbs": [
-      "Reference",
-      "Hydrolysis",
-      "kimmdy_hydrolysis.constants"
-    ]
-  },
-  {
-    "objectID": "_reference/kimmdy_hydrolysis.reaction.html",
-    "href": "_reference/kimmdy_hydrolysis.reaction.html",
-    "title": "kimmdy_hydrolysis.reaction",
-    "section": "",
-    "text": "reaction\n\n\n\n\n\nName\nDescription\n\n\n\n\nHydrolysisReaction\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nreaction.HydrolysisReaction()\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nName\nDescription\n\n\n\n\nget_steps_for_id_c_at_t\nGet the steps for a given bond at a given time.\n\n\ntimes_to_timespans\nTransforms an array of times into a list of time intervals\n\n\n\n\n\nreaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)\nGet the steps for a given bond at a given time.\nThe bond is identified by the atom id of the C atom.\n\n\n\nreaction.HydrolysisReaction.times_to_timespans(times)\nTransforms an array of times into a list of time intervals times are an array of times at which the SASA was calculated timespans are the time intervals between those times as tuples of (start, end)",
-    "crumbs": [
-      "Reference",
-      "Hydrolysis",
-      "kimmdy_hydrolysis.reaction"
-    ]
-  },
-  {
-    "objectID": "_reference/kimmdy_hydrolysis.reaction.html#classes",
-    "href": "_reference/kimmdy_hydrolysis.reaction.html#classes",
-    "title": "kimmdy_hydrolysis.reaction",
-    "section": "",
-    "text": "Name\nDescription\n\n\n\n\nHydrolysisReaction\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nreaction.HydrolysisReaction()\nHydrolyses peptide bonds of the backbone.\n\n\n\n\n\nName\nDescription\n\n\n\n\nget_steps_for_id_c_at_t\nGet the steps for a given bond at a given time.\n\n\ntimes_to_timespans\nTransforms an array of times into a list of time intervals\n\n\n\n\n\nreaction.HydrolysisReaction.get_steps_for_id_c_at_t(key, ttime)\nGet the steps for a given bond at a given time.\nThe bond is identified by the atom id of the C atom.\n\n\n\nreaction.HydrolysisReaction.times_to_timespans(times)\nTransforms an array of times into a list of time intervals times are an array of times at which the SASA was calculated timespans are the time intervals between those times as tuples of (start, end)",
-    "crumbs": [
-      "Reference",
-      "Hydrolysis",
-      "kimmdy_hydrolysis.reaction"
     ]
   },
   {
