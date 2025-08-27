@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.3.0...v0.4.0) (2025-08-27)
+
+
+### Features
+
+* Integration test with KIMMDY ([#13](https://github.com/graeter-group/kimmdy-hydrolysis/issues/13)) ([68f2a8d](https://github.com/graeter-group/kimmdy-hydrolysis/commit/68f2a8d1fa3bf8df770a18c8c261e376d564a48a))
+
 ## [0.3.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.2.3...v0.3.0) (2025-08-11)
 
 
