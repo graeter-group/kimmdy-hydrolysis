@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.4.0...v0.5.0) (2025-08-29)
+
+
+### Features
+
+* unit tests for rate calculations ([#15](https://github.com/graeter-group/kimmdy-hydrolysis/issues/15)) ([2004f93](https://github.com/graeter-group/kimmdy-hydrolysis/commit/2004f93f83d423eed8a61fa98f89e5e771373a0c))
+
 ## [0.4.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.3.0...v0.4.0) (2025-08-27)
 
 

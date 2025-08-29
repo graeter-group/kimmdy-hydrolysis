@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kimmdy-hydrolysis"
-version = "0.4.0"
+version = "0.5.0"
 license = {text = "GPL-3.0"}
 description = "Reaction plugin for KIMMDY that hydrolyses peptide bonds"
 readme = "README.md"
