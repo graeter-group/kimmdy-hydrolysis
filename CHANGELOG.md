@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.5.0...v0.5.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* fix type declaration of yaml schema for floats ([b6183d9](https://github.com/graeter-group/kimmdy-hydrolysis/commit/b6183d9605fa63a6970f6edb4371e81c8c0730f1))
+
 ## [0.5.0](https://github.com/graeter-group/kimmdy-hydrolysis/compare/v0.4.0...v0.5.0) (2025-08-29)
 
 
