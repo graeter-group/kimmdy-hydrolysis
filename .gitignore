@@ -163,3 +163,5 @@ cython_debug/
 /.quarto/
 
 /.luarc.json
+
+**/*.quarto_ipynb
