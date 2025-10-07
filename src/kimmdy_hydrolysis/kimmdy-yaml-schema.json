@@ -61,7 +61,7 @@
       "default": "rfkmc"
     },
     "ph_value": {
-      "type": "float",
+      "type": "number",
       "description": "pH value of the system. The default value is 7.4. The rate of the reaction is scaled by the pH value. More basic conditions will increase the rate of the reaction.",
       "pytype": "float",
       "minimum": 1.0,
@@ -69,14 +69,14 @@
       "default": 7.4
     },
     "max_sasa": {
-      "type": "float",
+      "type": "number",
       "description": "Maximum expeted solvent accessiblity of a C in a peptide bond. The reaction rate will be scaled based on the percent decrease of the SASA from this value. The default value is 3.97 A^2, which is the SASA of the C of the peptide bond in a simple glycine-glycine peptide.",
       "pytype": "float",
       "minimum": 1,
       "default": 3.97
     },
     "external_force": {
-      "type": "float",
+      "type": "number",
       "description": "External force applied in nN. Note: 603 gromacs (kJ/mol/nm^2) units per strand are 1nN. The default (-1) means to calculate a force per bond based on bond extension using a morse potential. This needs PLUMED",
       "pytype": "float",
       "default": -1
@@ -88,7 +88,7 @@
       "default": ""
     },
     "temperature": {
-      "type": "float",
+      "type": "number",
       "description": "Temperature",
       "pytype": "float",
       "minimum": 0,
@@ -107,42 +107,42 @@
           "default": false
         },
         "empirical_attempt_frequency": {
-          "type": "float",
+          "type": "number",
           "description": "The attempt frequency in 1/ps with the default based on experiments by Pill et al.",
           "pytype": "float",
           "minimum": 0,
           "default": 0.1
         },
         "ts1": {
-          "type": "float",
+          "type": "number",
           "description": "Energy barrier at 0 external force for TS1 of the hydrolysis reaction. [kJ/mol]",
           "pytype": "float",
           "minimum": 1,
           "default": 80
         },
         "ts2": {
-          "type": "float",
+          "type": "number",
           "description": "Energy barrier at 0 external force for TS2 of the hydrolysis reaction.",
           "pytype": "float",
           "minimum": 1,
           "default": 92
         },
         "ts1_force_scaling": {
-          "type": "float",
+          "type": "number",
           "description": "Force scaling factor for TS1 in kJ/mol/nN",
           "pytype": "float",
           "minimum": 1,
           "default": 1.67
         },
         "ts2_force_scaling": {
-          "type": "float",
+          "type": "number",
           "description": "Force scaling factor for TS2 in kJ/mol/nN",
           "pytype": "float",
           "minimum": 1,
           "default": 25.83
         },
         "critical_force": {
-          "type": "float",
+          "type": "number",
           "description": "Force in nN at which (the activation energy of) TS2 becomes lower than TS1 and this TS1 becomes the rate limiting step.",
           "pytype": "float",
           "minimum": 1,
