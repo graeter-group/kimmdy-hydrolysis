@@ -50,11 +50,14 @@ But the theortical rates don't quite match the experimental rates.
 ```{python}
 from plotnine import * # pyright: ignore
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import pandas as pd
 import numpy as np
 from kimmdy_hydrolysis.rates import high_force_log_rate, theoretical_reaction_rate_per_s, experimental_reaction_rate_per_s, low_force_log_rate
 import pandas as pd
 import os
+
+mpl.use('qtagg')
 
 root = os.getcwd()
 
@@ -84,6 +87,7 @@ df['plugin_high_log_k'] = [high_force_log_rate(force=f, temperature=t) for f, t 
 df['plugin_low_log_k'] = [low_force_log_rate(force=f) for f, t in zip(df["f"], df["t"])]
 df['plugin_log_k'] = np.log(df['plugin_k'])
 ```
+
 Fit model log(k) ~ t + f:
 
 ```{python}

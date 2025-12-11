@@ -18,6 +18,8 @@ dependencies = [
     "MDAnalysis",
     "kimmdy",
     "freesasa",
+    "plotnine>=0.15.0",
+    "pyqt6>=6.10.0",
 ]
 
 [project.optional-dependencies]
