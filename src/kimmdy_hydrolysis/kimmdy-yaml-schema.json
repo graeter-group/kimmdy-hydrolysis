@@ -145,7 +145,7 @@
           "type": "number",
           "description": "Force in nN at which (the activation energy of) TS2 becomes lower than TS1 and this TS1 becomes the rate limiting step.",
           "pytype": "float",
-          "minimum": 1,
+          "minimum": 0,
           "default": 0.7
         }
       },

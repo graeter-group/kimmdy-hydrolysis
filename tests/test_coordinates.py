@@ -2,6 +2,7 @@ from MDAnalysis.core.universe import Atom
 import MDAnalysis as mda
 import numpy as np
 from math import sqrt
+from pathlib import Path
 
 from kimmdy_hydrolysis.utils import get_aproach_penalty
 
@@ -26,7 +27,7 @@ def test_find_qm_waters_and_oh_by_example():
 
 
 def test_angle_penalties():
-    gro = "tests/test_files/gly-npt.gro"
+    gro = Path(__file__).parent / "test_files" / "gly-npt.gro"
     u = mda.Universe(str(gro))
     ix_cc = 11  # C
     ix_n = 13  # N

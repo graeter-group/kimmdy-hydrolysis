@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from kimmdy_hydrolysis.constants import K_b, T_EXPERIMENT
 from kimmdy_hydrolysis.rates import (
     e_ts1,
@@ -35,8 +36,12 @@ def test_high_force_rate():
 
 
 def test_experimental_rate():
-    assert experimental_reaction_rate_per_s(0, 0) == 2.594167969667349e-09
-    assert experimental_reaction_rate_per_s(1, 0) == 7.282766741703993e-09
+    assert experimental_reaction_rate_per_s(0, 0) == pytest.approx(
+        2.594167969667349e-09
+    )
+    assert experimental_reaction_rate_per_s(1, 0) == pytest.approx(
+        7.282766741703993e-09
+    )
     assert round(experimental_reaction_rate_per_s(0.7), 6) == 1.090779
 
 
