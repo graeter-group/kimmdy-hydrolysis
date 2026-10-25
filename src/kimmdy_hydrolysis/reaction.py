@@ -39,6 +39,16 @@ logger = logging.getLogger("kimmdy.hydrolysis")
 class HydrolysisReaction(ReactionPlugin):
     """Hydrolyses peptide bonds of the backbone."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # forces from bond extensions need dissociation energies
+        if self.config.external_force == -1 and not hasattr(
+            self.runmng.config, "edissoc_kimmdy"
+        ):
+            m = "The hydrolysis plugin with external_force -1 requires a file with dissociation energies defined in the kimmdy config as `edissoc_kimmdy`."
+            logger.error(m)
+            raise ValueError(m)
+
     def get_recipe_collection(self, files: TaskFiles) -> RecipeCollection:
         logger = files.logger
 
@@ -93,7 +103,7 @@ class HydrolysisReaction(ReactionPlugin):
                     plumed_in=plumed_in,
                     plumed_out=plumed_out,
                     dt=self.config.dt_distances,
-                    edissoc_dat=files.input["edissoc.dat"],
+                    edissoc_dat=self.runmng.config.edissoc_kimmdy,
                 )
                 self.cache_bondstats()
 
